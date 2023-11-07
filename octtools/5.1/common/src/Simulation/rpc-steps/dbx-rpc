@@ -1,0 +1,22 @@
+#! /bin/csh
+set path = ($path )
+
+
+set PROG = ~/common/src/Simulation/rpc-steps/rpc-steps
+set DIR = (~/common/src/Simulation/rpc-steps )
+
+echo ""
+echo "VEM/RPC GDB"
+echo "$PROG"
+
+cat >> /tmp/gdbinit.$$ << +++
+alias runrpc "run $*"
+use $DIR 
+stop in errRaise
++++
+
+cat /tmp/gdbinit.$$
+
+xterm -display $1 -n "VEM/RPC GDB" -e dbx -c /tmp/gdbinit.$$ $PROG
+# /bin/rm /tmp/gdbinit.$$
+exit

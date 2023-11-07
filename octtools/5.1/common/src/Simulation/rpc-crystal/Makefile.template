@@ -1,0 +1,19 @@
+NAME: rpc-crystal
+DESCRIPTION: Remote Application interface to the crystal(1CAD) timing analyser
+TYPE: TR
+PACKAGES: rpc oh list st tr utility errtrap uprintf mm port
+MISC: 
+
+EXTRAFLAGS: 
+
+SOURCES: build.c check.c clear.c commands.c crystalDirection.c crystalFlow.c debug.c delay.c dprint.c editCommands.c expand.c flow.c generalCommands.c graphout.c hash.c helpCommands.c initCrystal.c interactiveDM.c lookup.c mark.c misc.c model.c nextfield.c octBuild.c octCap.c octNames.c octProps.c octStHelper.c octStore.c print.c prsmodel.c quad.c rcmodel.c rpc_crystal.c runstats.c simulateCommands.c slopemodel.c spice.c totalcap.c version.c
+HEADERS: rpc_crystal.h crystal.h hash.h cOct.h
+OBJECTS: build.o check.o clear.o commands.o crystalDirection.o crystalFlow.o debug.o delay.o dprint.o editCommands.o expand.o flow.o generalCommands.o graphout.o hash.o helpCommands.o initCrystal.o interactiveDM.o lookup.o mark.o misc.o  model.o nextfield.o octBuild.o octCap.o octNames.o octProps.o octStHelper.o octStore.o print.o prsmodel.o quad.o rcmodel.o rpc_crystal.o runstats.o simulateCommands.o slopemodel.o spice.o totalcap.o version.o
+SYSLIBS: -lm
+
+VERBATIMSTART
+VERBATIMEND
+
+TESTNAME: $(NAME)-test
+TESTSOURCES: 
+TESTOBJECTS: 

@@ -1,0 +1,15 @@
+CCT (r1,f1,mr1,mf1,oc1,r2,f2,mr2,mf2,oc2,ic1,ic2) NORF211F(O1,O2,A1,B1) 
+
+capacitor(ic1) cap1(A1);
+capacitor(ic2) cap2(B1);
+capacitor(oc1) cap3(O1);
+capacitor(oc2) cap4(O2);
+
+** WIRE DECLARATIONS
+
+INPUT   A1 B1;
+
+WIRE    (r1,f1,mr1,mf1,0) O1 = NOT O2;
+WIRE    (r2,f2,mr2,mf2,0) O2 = A1 NOR B1;
+.
+

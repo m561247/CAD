@@ -1,0 +1,49 @@
+| units: 150	tech: scmos
+p i1 Vdd i2 2 3 -22 37
+p inv.in Vdd inv.out 2 3 57 37
+n ga i2 nb 2 3 -8 6
+n gb nb nc 2 3 -4 6
+n gc nc nd 2 3 0 6
+n gd nd ne 2 3 4 6
+n ge ne nf 2 3 8 6
+n gf nf ng 2 3 12 6
+n gg ng nh 2 3 16 6
+n gh nh ni 2 3 20 6
+n gi ni nj 2 3 24 6
+n gj nj nk 2 3 28 6
+n gk nk nl 2 3 32 6
+n gl nl nm 2 3 36 6
+n gm nm inv.in 2 3 40 6
+n i1 i2 GND 2 3 -22 2
+n inv.in inv.out GND 2 3 57 2
+R GND 876
+R inv.out 1119
+R nm 60
+R nl 60
+R nk 60
+R nj 60
+R ni 60
+R nh 60
+R ng 60
+R nf 60
+R ne 60
+R nd 60
+R nc 60
+R nb 60
+R gm 105
+R gl 105
+R gk 105
+R gj 105
+R gi 105
+R gh 105
+R gg 105
+R gf 105
+R ge 105
+R gd 105
+R gc 105
+R gb 105
+R ga 105
+R i2 1263
+R inv.in 1177
+R i1 1117
+R Vdd 1680

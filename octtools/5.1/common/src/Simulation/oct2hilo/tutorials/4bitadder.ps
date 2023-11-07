@@ -1,0 +1,403 @@
+%!
+% 4bit:schematic:contents - output from oct2ps on Fri Jun  1 15:16:53 1990
+% OCT2PS (compiled Nov 28 1989)
+%
+% oct2ps -finterface -t -F 4bit:schematic:contents
+%
+%
+% PostScript prologue file for oct2ps
+%
+%   Rick L. Spickelmier
+%
+
+%
+% tile a box
+%
+% llx lly urx ury tb
+%
+/tb {
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+% if the layer is all 1's, don't tile it, fill it
+bm 256 eq
+{
+  0 setgray
+  newpath
+  llx lly moveto
+  urx lly lineto
+  urx ury lineto
+  llx ury lineto
+  closepath fill
+}
+{
+bm 0 ne
+{
+gsave
+/tilex { bmw llx bmw div cvi mul bmw sub } def
+/tiley { bmh lly bmh div cvi mul bmh sub } def
+/xcount { 1 urx tilex sub bmw div cvi add } def
+/ycount { 1 ury tiley sub bmh div cvi add } def
+xcount 0 lt { /xcount 1 def } if
+ycount 0 lt { /ycount 1 def } if
+%
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath clip
+
+/strng xcount string def
+
+0 1 xcount 1 sub { strng exch bm put } for
+
+ycount { tilex tiley moveto strng show 0 bmh translate } repeat
+
+grestore
+} if
+} ifelse
+} def
+%
+% tile a bitmap with out clipping (for polygons)
+%
+% llx lly urx ury tp
+%
+/tp {
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+% if the layer is all 1's, don't tile it, fill it
+bm 256 eq
+{
+  0 setgray
+  newpath
+  llx lly moveto
+  urx lly lineto
+  urx ury lineto
+  llx ury lineto
+  closepath fill
+}
+{
+bm 0 ne
+{
+gsave
+/tilex { bmw llx bmw div cvi mul bmw sub } def
+/tiley { bmh lly bmh div cvi mul bmh sub } def
+/xcount { 1 urx tilex sub bmw div cvi add } def
+/ycount { 1 ury tiley sub bmh div cvi add } def
+xcount 0 lt { /xcount 1 def } if
+ycount 0 lt { /ycount 1 def } if
+%
+/strng xcount string def
+
+0 1 xcount 1 sub { strng exch bm put } for
+
+ycount { tilex tiley moveto strng show 0 bmh translate } repeat
+
+grestore
+} if
+} ifelse
+} def
+%
+% formal terminal
+%
+% llx lly urx ury string ft
+%
+/ft {
+/str exch def
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath stroke
+llx lly moveto
+str show
+} def
+%
+% actual terminal
+%
+% llx lly urx ury string at
+%
+/at {
+/str exch def
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath stroke
+urx str stringwidth pop sub ury fscale sub moveto
+str show
+} def
+%
+% label
+%
+% x y string lb
+%
+/lb {
+/str exch def
+/y exch def
+/x exch def
+x y moveto
+str show
+} def
+%
+% outline with text
+%
+% llx lly urx ury string ot
+%
+/ot {
+/str exch def
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+/cx llx urx add 2 div def
+/cy lly ury add 2 div def
+/halfstrwidth str stringwidth pop 2 div def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath 0.8 setgray fill
+0 setgray newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath stroke
+cx halfstrwidth sub cy moveto
+str show
+} def
+%
+% box outline 
+%
+% llx lly urx ury bx
+%
+/bx {
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+llx lly lineto
+closepath stroke
+} def
+%
+% abstract connector
+%
+% llx lly urx ury con
+%
+/con {
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+llx lly lineto
+urx ury lineto
+llx ury moveto
+urx lly lineto
+closepath stroke
+} def
+%
+% draw a line
+%
+% x1 y1 x2 y2 ln
+%
+/ln {
+/y2 exch def
+/x2 exch def
+/y1 exch def
+/x1 exch def
+newpath
+x1 y1 moveto
+x2 y2 lineto
+stroke
+} def
+
+/putbm {
+   /arr exch def
+   /str arr length string def
+   0 1 arr length 1 sub { str exch dup arr exch get put } for
+   str
+} def
+/fctm matrix currentmatrix def
+0 0 translate
+283 264 translate
+%%BoundingBox: 283 264 327 526
+/sc 0.221726 def
+/fsize 16.000000 def
+/fscale fsize sc div def
+/psize 8 def
+/scsize psize sc div def
+/lfont { /Times-Bold findfont fscale scalefont setfont } def
+/bmw scsize def
+/bmh scsize def
+sc sc scale
+-119 781 translate
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+/Dict-110 16 dict def
+/$workingdict 18 dict def
+Dict-110 begin
+/FontType 3 def
+/FontMatrix [1.0 32 div 0 0 1.0 32 div 0 0] def
+/FontBBox [0 0 32 32] def
+/Encoding 4 array def
+/CharProcs 16 dict dup begin
+end def
+/BuildChar
+{$workingdict begin
+/charcode exch def
+/fontdict exch def
+fontdict /CharProcs get
+fontdict /Encoding get
+charcode get get
+gsave
+0 setgray newpath
+32 0
+0 0
+32 32
+setcachedevice
+exec
+grestore
+end
+} def
+end
+/font-110 Dict-110 definefont pop
+/sf-110 { /font-110 findfont scsize scalefont setfont } def
+sf-110
+sctm setmatrix
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-110
+sctm setmatrix
+/bm 256 def
+140 140 140 380 ln
+140 380 300 380 ln
+300 380 300 140 ln
+300 140 140 140 ln
+140 300 120 300 ln
+140 220 120 220 ln
+300 300 320 300 ln
+220 380 220 400 ln
+220 140 220 120 ln
+/bm 256 def
+119 299 121 301 tb
+119 219 121 221 tb
+319 299 321 301 tb
+219 399 221 401 tb
+219 119 221 121 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-110
+sctm setmatrix
+/bm 256 def
+140 -160 140 80 ln
+140 80 300 80 ln
+300 80 300 -160 ln
+300 -160 140 -160 ln
+140 0 120 0 ln
+140 -80 120 -80 ln
+300 0 320 0 ln
+220 80 220 100 ln
+220 -160 220 -180 ln
+/bm 256 def
+119 -1 121 1 tb
+119 -81 121 -79 tb
+319 -1 321 1 tb
+219 99 221 101 tb
+219 -181 221 -179 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-110
+sctm setmatrix
+/bm 256 def
+140 -760 140 -520 ln
+140 -520 300 -520 ln
+300 -520 300 -760 ln
+300 -760 140 -760 ln
+140 -600 120 -600 ln
+140 -680 120 -680 ln
+300 -600 320 -600 ln
+220 -520 220 -500 ln
+220 -760 220 -780 ln
+/bm 256 def
+119 -601 121 -599 tb
+119 -681 121 -679 tb
+319 -601 321 -599 tb
+219 -501 221 -499 tb
+219 -781 221 -779 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-110
+sctm setmatrix
+/bm 256 def
+140 -460 140 -220 ln
+140 -220 300 -220 ln
+300 -220 300 -460 ln
+300 -460 140 -460 ln
+140 -300 120 -300 ln
+140 -380 120 -380 ln
+300 -300 320 -300 ln
+220 -220 220 -200 ln
+220 -460 220 -480 ln
+/bm 256 def
+119 -301 121 -299 tb
+119 -381 121 -379 tb
+319 -301 321 -299 tb
+219 -201 221 -199 tb
+219 -481 221 -479 tb
+grestore
+/bm 256 def
+220 120 220 100 ln
+220 -180 220 -200 ln
+220 -480 220 -500 ln
+gsave
+lfont
+219 419 221 421 (ci0) ft
+219 -841 221 -839 (co4) ft
+-40 299 -38 301 (a<0>) ft
+-40 219 -38 221 (b<0>) ft
+-40 -1 -38 1 (a<1>) ft
+-40 -81 -38 -79 (b<1>) ft
+-40 -301 -38 -299 (a<2>) ft
+-40 -381 -38 -379 (b<2>) ft
+-40 -601 -38 -599 (a<3>) ft
+-40 -681 -38 -679 (b<3>) ft
+339 299 341 301 (sum<0>) ft
+339 -1 341 1 (sum<1>) ft
+339 -301 341 -299 (sum<2>) ft
+339 -601 341 -599 (sum<3>) ft
+grestore
+grestore

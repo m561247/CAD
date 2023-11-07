@@ -1,0 +1,450 @@
+\documentstyle[11pt,titlepage]{article}
+\input{/users/staff/paul/tutorials/common/defs.tex}
+\input{/users/staff/paul/tutorials/common/header.tex}
+\begin{document}
+\begin{titlepage}
+\begin{center}
+\vspace*{2in}
+{\LARGE\bf Oct2hilo: Bdnet to HISIM \\[2ex]}
+{\Large John D. Sutter \\[1ex]
+Massachusetts Microelectronics Center \\[.5ex]
+\mmc}
+\end{center}
+
+\vspace*{3.2in}
+\copyright Copyright 1990 Massachusetts Technology Park Corporation
+\end{titlepage}
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+
+  The purpose of this lab is to show how to take an OCT
+symbolic description of a circuit and generate a GHDL
+description that can be used with System HILO from GenRad.
+HISIM, System HILO's timing simulator, can be used
+to simulate the circuit using real delays.
+
+  In this lab you will use bdnet from the Octtools to describe
+a full adder with standard cells from the MSU 2.2 library.  
+You will then use this full adder to build a four bit adder.  
+After flattening the hierarchy oct2hilo will be run to convert
+the OCT description to GHDL(HILO).  From there you will enter
+System HILO, compile the circuit description, and then simulate
+it with HISIM.  This tutorial will be broken into two sections:
+Octtools and HiLo.
+
+
+\section{Octtools}
+
+  Figure~\ref{fig:fulladder} shows the full adder you will 
+use in this exercise.
+The logic gates used directly map into cells from the MSU
+library.  The xor gates are XORF201's and the nand gates are
+NANF201's.  Listing 1 shows the netlist used to wire these 
+cells to make the full adder.  Use your favorite editor to
+create the file {\bf fulladder.bdnet} with listing 1.
+
+{\bf Listing 1:}
+
+\begin{verbatim}
+MODEL fulladder:symbolic;
+TECHNOLOGY scmos;
+VIEWTYPE symbolic;
+EDITSTYLE symbolic;
+
+OUTPUT sum, cout;
+INPUT a, b, cin;
+SUPPLY Vdd;
+GROUND GND;
+
+INSTANCE "~octtools/lib/technology/scmos/msu/stdcell2_2/xorf201":physical
+  ! MSU cell xorf201 xor
+  A1: a;
+  B1: b;
+  O:  a1_xor_b1;
+  "Vdd!": Vdd;
+  "GND!": GND;
+
+INSTANCE "~octtools/lib/technology/scmos/msu/stdcell2_2/xorf201":physical
+  ! MSU cell xorf201 xor
+  A1: a1_xor_b1;
+  B1: cin;
+  O:  sum;
+  "Vdd!": Vdd;
+  "GND!": GND;
+
+INSTANCE "~octtools/lib/technology/scmos/msu/stdcell2_2/nanf201":physical
+  ! MSU cell nanf201 nand
+  A1: a;
+  B1: b;
+  O:  a1_nand_b1;
+  "Vdd!": Vdd;
+  "GND!": GND;
+
+INSTANCE "~octtools/lib/technology/scmos/msu/stdcell2_2/nanf201":physical
+  ! MSU cell nanf201 nand
+  A1: a1_xor_b1;
+  B1: cin;
+  O:  a1_xor_b1_nand_cin2;
+  "Vdd!": Vdd;
+  "GND!": GND;
+
+INSTANCE "~octtools/lib/technology/scmos/msu/stdcell2_2/nanf201":physical
+  ! MSU cell nanf201 nand
+  A1: a1_nand_b1;
+  B1:  a1_xor_b1_nand_cin2;
+  O:  cout;
+  "Vdd!": Vdd;
+  "GND!": GND;
+ENDMODEL;
+\end{verbatim}
+
+Run bdnet to create the OCT cell:
+
+{\bf  \% bdnet fulladder.bdnet}
+
+\begin{figure}
+\centering
+\vspace{1.5in}
+\special{psfile=fulladder.ps hoffset=-2.0 voffset=-4.8}
+\caption{Full Adder }
+\label{fig:fulladder}
+\end{figure}
+
+  You now have an OCT symbolic description, {\bf fulladder:symbolic},
+of the full adder.  Use bdnet again to wire four full adders 
+together to make the four bit adder shown in figure~\ref{fig:4bitadder}.  
+Use listing 2 and name the file {\bf 4bitadder.bdnet}.  
+
+{\bf Listing 2:}
+
+\begin{verbatim}
+MODEL 4bitadder:symbolic;
+TECHNOLOGY scmos;
+VIEWTYPE symbolic;
+EDITSTYLE symbolic;
+
+OUTPUT sum<3:0>, cout: carry<4> ;
+INPUT a<3:0>, b<3:0>, cin: carry<0>;
+SUPPLY Vdd;
+GROUND GND;
+
+ARRAY %i FROM 0 TO 3 OF
+  INSTANCE fulladder:symbolic
+    !  gate equivalent of MSU fulladder
+    a:    a<%i>;
+    b:    b<%i>;
+    cin:  carry<%i>;
+    sum:  sum<%i>;
+    cout: carry<%i+1>;
+    Vdd:  Vdd;
+    GND:  GND;
+
+ENDMODEL;
+\end{verbatim}
+
+Run bdnet on the netlist:
+
+{\bf   \% bdnet 4bitadder.bdnet}
+
+\begin{figure}
+\centering
+\vspace{3.0in}
+\special{psfile=4bitadder.ps hoffset=-1.5 voffset=-3.5}
+\caption{Four Bit Adder }
+\label{fig:4bitadder}
+\end{figure}
+
+  Verify the four bit adder by running musa on the resulting cell, 
+{\bf 4bitadder:symbolic} using the control file in listing 3:
+
+{\bf Listing 3:}
+
+\begin{verbatim}
+mv a a<3:0>
+mv b b<3:0>
+mv sum sum<3:0>
+
+ma shsigs
+  sh a b cin sum cout
+$end
+
+se a 0001
+se b 0001
+se cin 0
+ev
+shsigs
+
+se b 1110
+ev
+shsigs
+
+se cin 1
+ev
+shsigs
+
+se a 0011
+se b 1011
+ev
+shsigs
+
+se cin 0
+ev
+shsigs
+
+quit
+\end{verbatim}
+
+  Run musa:
+
+{\bf   \% musa -i 4bitadder.ctl 4bitadder:symbolic}
+
+  If things don't add up, check your {\bf .bdnet} files and try again.
+You now have a fully functional four bit adder.  To prepare it for 
+oct2hilo you must flatten the hierarchy with octflatten.
+
+  Run octflatten:
+
+{\bf   \% octflatten -t LEAF -o 4bitadder:flat 4bitadder:symbolic}
+
+  If you are not familiar with hierarchies you may want to 
+extract the netlists from both views using bdnet and compare
+them.  You will notice that the netlist for the {\bf symbolic} view
+instantiates only the fulladder while the {\bf flat} view instantiates
+all the elements from the fulladder:
+
+{\bf   \% bdnet -n 4bitadder:symbolic}\\
+{\bf   \% bdnet -n 4bitadder:flat}
+
+  The four bit adder, {\bf 4bitadder:flat}  is now ready to be 
+converted to the format used by System HILO.  The conversion tool 
+is called oct2hilo.  Oct2hilo takes a flattened description
+and converts it GHDL.  Oct2hilo can generate timing parameters
+for unit, typical, and worst case delays.  Use typical
+delays for now.  For other oct2hilo options see the man page or:
+
+{\bf   \% oct2hilo -usage}
+
+  Running as shown below will generate the GHDL description in 
+{\bf 4bitadder.cct}:
+
+{\bf   \% oct2hilo 4bitadder:flat}
+
+
+\section{System HILO}
+
+  System HILO is a menu driven simulation package.  Before running
+a command, arguments and parameters may need to be set.  To run a command
+type {\bf run} followed by a carriage return.  There are two ways to set 
+a parameter.  The first is by using the cursor keys to get to the
+parameter to be changed and then either typing in the value or using
+the cursor keys to select a value.  The other way is to set the value
+of a parameter from the command line.  For instance, typing 
+{\bf name = 4bitadder} would set the name parameter to 4bitadder.
+
+  To start System HiLo type:
+
+{\bf   \% hilo}
+
+  System HILO will put up a title page with a copyright notice.  Hit
+the space bar to get to the {\bf CONTENTS} page.  This page lists all other
+command pages.  To get to a command page enter its name and then return.
+All arguments and parameters will be listed.  
+
+  The GHDL description of the 4bitadder needs to be compiled into your
+HILO library.  You probably don't have a HILO library set up yet.  To
+create one type:
+  
+{\bf   \#create}\\
+{\bf   \#run}
+
+  This will create the library in your current directory.  You could have
+specified another location with the {\bf LDIR} parameter.  Next add
+the library of the models for the MSU cells.  This is done with the LIBADD
+command page.  Type:
+
+{\bf   \#libadd}
+
+  The directory to add to the path is {\bf \~octtools/lib/oct2hilo/msu\_2.2}.
+Unfortunately System HILO doesn't understand the '\~' character so the
+entire path will have to be specified.  Determine the path of {\bf ~octtools}
+at your site.  As an example we have used {\bf /cad/oct}.  Set the {\bf LIB}
+parameter to the MSU HILO library:
+
+{\bf   \#lib=/cad/oct/lib/oct2hilo/msu\_2.2}\\
+{\bf   \#run}
+
+  Once a library has been created you probably won't have to do anything
+more with it except add new libraries to the search path.  You can list
+the libraries in the search path using the {\bf PATHLIST} page.  
+You can remove libraries with the {\bf LIBDELETE} page.  
+{\bf PATHDELTE} removes all libraries from the search path.
+
+  You should now be ready to compile your circuit.  Go to the {\bf CIRCUIT} 
+page.  In the upper right hand corner there is a {\bf NAME} parameter.  
+Set this to the name of the circuit and run the compiler:
+
+{\bf   \#circuit}\\
+{\bf   \#name=4bitadder}\\
+{\bf   \#run}
+
+  If all goes well you will get a message that the circuit compiled.  If 
+not it will list the errors.  If the compile fails, make sure you used 
+the correct path for the library.  Use the {\bf LIST} command to list the
+contents of your library.
+
+{\bf   \#list}\\
+{\bf   \#run}
+
+  You have the compiled circuit.  You want to simulate it.  What you
+haven't done yet is specify the stimuli to the circuit.  In System
+HILO this is done with a {\bf DWL} (Digital Waveform Language) file.  This
+file describes what data is placed on the input pins at what time.
+{\bf DWL} is quite an extensive language.  Only the basics will be used
+for the four bit adder.  
+
+  To create the {\bf DWL} file you can either invoke the editor from System
+HILO using vi or invoke your favorite editor using the shell escape
+command:
+
+{\bf   \#edit .dwl}\\
+    or\\
+{\bf   \#!emacs 4bitadder.dwl}
+
+  Note that if you use the {\bf edit} command you don't have to specify 
+the full name.  It uses the parameter {\bf name} from the upper right 
+hand corner as the first part of the filename and the {\bf .dwl} as the
+end.  Create the file using listing 4.
+
+{\bf Listing 4:}
+
+\begin{verbatim}
+waveform 4bitadder;
+  base bin;
+  input TinA[3:0]:=0;
+  input TinB[3:0]:=0;
+  input Tcin:=0;
+  output Tcout;
+  output Tsum[3:0];
+
+begin
+
+  TinA:= 0010;
+  TinB:= 0010;
+  Tcin:=1;
+  TinA:= 0011;
+  TinB:= 0011;
+  TinA:= 0111;
+  TinB:= 0111;
+  TinA:= 1111;
+  TinB:= 1111;
+  Tcin:=0;
+
+  TinA:= 1111;
+  TinB:= 0000;
+  TinB:= 0001;
+  Tcin:=1;
+
+  Tcin:=0;
+  TinA:= 1111;
+  TinB:= 0000;
+  Tcin:=1;
+  TinB:= 1111;
+
+  Tcin:=0;
+  TinA:= 1111
+  TinB:= 0111;
+
+  TinA:= 1111
+  TinB:= 0010;
+end
+endwaveform
+\end{verbatim}
+
+  To verify the correctness of the {\bf DWL} file use the {\bf WAVEFORM} command
+page:
+
+{\bf   \#waveform}\\
+{\bf   \#run}
+
+  You actually do not need to run the {\bf WAVEFORM} command on a {\bf DWL}
+file.  The {\bf DWL} file is automatically compiled during each simulation.
+
+  There is just one more thing that needs to be done before
+simulating the four bit adder.  HISIM, the timing simulator, also needs
+a file listing the signals to watch during the simulation.
+There three different ways HISIM can display the data from a
+simulation run.  The first is the {\bf Visual display} that looks like
+a timing table from a data book.  The second is the {\bf Tabular display}
+that lists signals by their value in chronological order.  The
+third is the {\bf Line display} that gives a verbose listing of signal
+values with the simulation time.  These files are referred to by
+the suffixes {\bf .vnm}, {\bf .tnm}, and {\bf .lnm} respectively.  Create a
+tabular name file using listing 5:
+
+{\bf Listing 5:}
+
+\begin{verbatim}
+$time
+$space
+Tcin
+$space
+TinA[3:0]
+$space
+TinB[3:0]
+$space
+Tcout
+$space
+Tsum[3:0]
+\end{verbatim}
+
+{\bf   \#edit .tnm}\\
+    or\\
+{\bf   \#!emacs 4bitadder.tnm}
+
+  It is time to simulate.  Go to the {\bf HISIM} command page.  You can
+set the three display modes on or off.  The {\bf Tabular display} option
+can also direct the output to a file.  Set this option to {\bf BOTH}. 
+Run the simulator:
+
+{\bf   \#HISIM}\\
+{\bf   \#tab=both}\\
+{\bf   \#run}
+
+  If all goes well you will get a screen full of simulation data.
+HISIM prompts whether you want to exit or browse the log file.
+Hit return to exit.  The best way to examine the data is with 
+the editor.  If you choose {\bf BOTH} for the {\bf Tabular display}
+parameter HISIM places the data in the file ending in {\bf .tab}:
+
+{\bf   \#edit .tab}\\
+    or\\
+{\bf   \#!emacs 4bitadder.tab}
+
+  You will notice lines of data blocked together.  These blocks
+show the signal propagating through the gates.  By the end of
+each block the signals are at the proper levels.  Check some 
+of the sums manually to verify the circuit.  To exit System
+hilo type:
+
+{\bf   \#exit}
+  
+  If you have done the {\bf Schematic Capture} tutorial you have probably
+noticed a that the implementation of the fulladder is different.  Run
+oct2hilo on the flattened 4bit circuit, compile it under System HILO,
+and simulate it with HISIM.  You will have to make a {\bf .dwl} 
+and a {\bf .tnm} file for it.  Use the files from 4bitadder and 
+change the name of the circuit in the {\bf .dwl} file:
+
+{\bf   \#!cp 4bitadder.dwl 4bit.dwl}\\
+{\bf   \#e .dwl}\\
+{\bf   \#!cp 4bitadder.tnm 4bit.tnm}
+
+  After comparing the simulation with the previous run you will
+notice that it takes longer for {\bf cout} to propagate in 4bitadder.
+
+
+\end{document}
+

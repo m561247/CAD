@@ -1,0 +1,44 @@
+tech nmos
+<< polysilicon >>
+rect -32 10 -12 14
+rect -28 22 -16 40
+rect -6 -6 -2 22
+rect 6 12 10 44
+rect 18 -6 22 22
+rect 40 10 60 14
+rect 44 22 56 40
+<< diffusion >>
+rect -26 0 -18 6
+rect -28 6 -16 16
+rect -26 42 -18 50
+rect -24 20 -20 42
+rect 46 0 54 6
+rect 44 6 56 16
+rect 46 42 54 50
+rect 48 20 52 42
+rect -28 16 56 20
+<< metal >>
+rect -32 42 60 50
+rect -32 0 60 8
+<< implant >>
+rect -26 18 -18 44
+rect 46 18 54 44
+<< buried_contact >>
+rect -26 18 -18 28
+rect -8 14 0 24
+rect 16 14 24 24
+rect 46 18 54 28
+<< cut >>
+rect -24 2 -20 6
+rect -24 44 -20 48
+rect 48 2 52 6
+rect 48 44 52 48
+<< labels >>
+label In -30 12 -30 12 3
+label Vdd -30 46 -30 46 3
+label GND -30 4 -30 4 3
+label O1 -4 -2 -4 -2 3
+label Phi 8 38 8 38 3
+label O1 20 -2 20 -2 3
+label In2 58 12 58 12 3
+<< end >>

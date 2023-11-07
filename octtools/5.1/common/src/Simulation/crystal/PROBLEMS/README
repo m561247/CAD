@@ -1,0 +1,7 @@
+This directory contains examples of problems that lead to generating
+a new version.  That is, the examples in each version should work on that
+and subsequent higher versions.
+
+See also ../changelog
+
+Fred W. Obermeier

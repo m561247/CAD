@@ -1,0 +1,4 @@
+| units: 1	tech: nmos
+d 7 Vdd 7 1200 400 800 2800
+e Phi Out 7 400 400 2400 1600
+e In 7 GND 400 1200 400 1000

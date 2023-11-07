@@ -1,0 +1,4 @@
+cap 1 inv.in
+cap 10 inv.out
+delay i1 0 0
+critical

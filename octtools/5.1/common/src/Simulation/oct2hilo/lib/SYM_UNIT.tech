@@ -1,0 +1,57 @@
+aof2201 ao22 1 1 0 0 0 0 0 0 0 ; O A1 B1 C2 D2 *
+aof2301 ao33 1 1 0 0 0 0 0 0 0 0 0 ; O A1 B1 C1 D2 E2 F2 *
+aof3201 ao222 1 1 0 0 0 0 0 0 0 0 0 ; O A1 B1 C2 D2 E3 F3 *
+aof4201 ao2222 1 1 0 0 0 0 0 0 0 0 0 0 0 ; O A1 B1 C2 D2 E3 F3 G4 H4 *
+aoif2201 aoi22 1 1 0 0 0 0 0 0 0 ; O A1 B1 C2 D2 *
+blf00001 aoi21 1 1 0 0 0 0 0 0 ; O A1 B2 C2 *
+blf00101 oai21 1 1 0 0 0 0 0 0 ; O A1 B2 C2 *
+buff100 himpbuf 1 1 0 0 0 0 ; O A1 *
+buff101 buffer 1 1 0 0 0 0 ; O A1 *
+buff121 tristatebuf 1 1 0 0 0 0 0 ; O DATA1 EN2 *
+delf011 delaycell ; O A1 *
+dfbf311 dffsetreset 1 1 0 0 0 1 1 0 0 0 0 0 0 0 ; Q Q_b DATA1 CLK2 RST3 SET4 *
+dfnf311 dff 1 1 0 0 0 1 1 0 0 0 0 0 ; Q Q_b DATA1 CLK2 *
+dfrf301 dffasycreset 1 1 0 0 0 0 0 0 ; Q DATA1 CLK2 RST3 *
+dfrf311 dffreset 1 1 0 0 0 1 1 0 0 0 0 0 0 ; Q Q_b DATA1 CLK2 RST3 *
+faf001 fulladder 1 1 0 0 0 1 1 0 0 0 0 0 0 ; SUM CO A1 B1 CIN2 *
+invf100 himpinv 1 1 0 0 0 0 ; O A1 *
+invf101 inv 1 1 0 0 0 0 ; O A1 *
+invf103 threexinvbuf 1 1 0 0 0 0 ; A1 O *
+invf104 fourxinvbuf 1 1 0 0 0 0 ; A1 O *
+invf201 twoinvert 1 1 0 0 0 1 1 0 0 0 0 ; O1 O2 A1 B2 *
+labf111 crosscoupnandlatch 1 1 0 0 0 1 1 0 0 0 0 0 ; Q Q_b RST1 SET2 *
+labf211 crosscoupnorlatch 1 1 0 0 0 1 1 0 0 0 0 0 ; Q Q_b RST1 SET2 *
+larf310 clocklatch 1 1 0 0 0 1 1 0 0 0 0 0 0 ; Q Q_b DATA1 CLK2 RST3 *
+muxf201 twoinpmux 1 1 0 0 0 0 0 0 ; O A1 B2 SEL3 *
+nanf201 nand2 1 1 0 0 0 0 0 ; O A1 B1 *
+nanf211 and2nand2 1 1 0 0 0 1 1 0 0 0 0 0 ; O1 O2 A1 B1 *
+nanf251 nimp 1 1 0 0 0 0 0 ; O A1 B2 *
+nanf301 nand3 1 1 0 0 0 0 0 0 ; O A1 B1 C1 *
+nanf311 and3nand3 1 1 0 0 0 1 1 0 0 0 0 0 0 ; O1 O2 A1 B1 C1 *
+nanf401 nand4 1 1 0 0 0 0 0 0 0 ; O A1 B1 C1 D1 *
+nanf411 and4nand4 1 1 0 0 0 1 1 0 0 0 0 0 0 0 ; O1 O2 A1 B1 C1 D1 *
+norf201 nor2 1 1 0 0 0 0 0 ; O A1 B1 *
+norf211 or2nor2 1 1 0 0 0 1 1 0 0 0 0 0 ; O1 O2 A1 B1 *
+norf251 imp 1 1 0 0 0 0 0 ; O A1 B2 *
+norf301 nor3 1 1 0 0 0 0 0 0 ; O A1 B1 C1 *
+norf311 or3nor3 1 1 0 0 0 1 1 0 0 0 0 0 0 ; O1 O2 A1 B1 C1 *
+norf401 nor4 1 1 0 0 0 0 0 0 0 ; O A1 B1 C1 D1 *
+oaif2201 oai22 1 1 0 0 0 0 0 0 0 ; O A1 B1 C2 D2 *
+orf401 or4 1 1 0 0 0 0 0 0 0 ; O A1 B1 C1 D1 *
+pudf000 pulldown ; O *
+puuf000 pullup ; O *
+swcf020 transgate 1 1 0 0 0 0 0 ; O DATA1 CTL2 *
+xnof201 nxor2 1 1 0 0 0 0 0 ; O A1 B1 *
+xnsf201 statnxor2 1 1 0 0 0 0 0 ; O A1 B1 *
+xorf201 xor2 1 1 0 0 0 0 0 ; O A1 B1 *
+xosf201 statxor2 1 1 0 0 0 0 0 ; O A1 B1 *
+# pads
+V4out   v4out  ; pad OUT *
+V4outm  v4outm ; pad OUT *
+V4in    v4in   ; IN INB pad IN_UNB *
+V4inm   v4inm  ; IN INB pad IN_UNB *
+V4io    v4io   ; pad IN OUT INB IN_UNB ENABLE *
+V4iom   v4iom  ; pad IN OUT INB IN_UNB ENABLE *
+V4vdd   v4vdd  ; *
+V4gnd   v4gnd  ; *
+

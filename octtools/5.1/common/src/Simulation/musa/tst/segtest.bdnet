@@ -1,0 +1,101 @@
+MODEL segtest:bdnet;
+
+TECHNOLOGY scmos;
+
+INPUT A<3:0>, B<3:0>, C<3:0>; 
+
+SUPPLY Vdd;
+GROUND GND;
+
+INSTANCE "$OCTTOOLS/lib/musa/greenled":physical
+	Name = "GreenLED"
+	[60,200]
+	ANODE: aNet2;
+	CATHODE: GND;
+
+INSTANCE "$OCTTOOLS/lib/musa/yellowled":physical
+	Name = "YellowLED"
+	[180,200]
+	ANODE: aNet1;
+	CATHODE: GND;
+
+INSTANCE "$OCTTOOLS/lib/musa/redled":physical
+	Name = "RedLED"
+	[300,200]
+	ANODE: aNet;
+	CATHODE: GND;
+
+INSTANCE "decoder":logic
+	In<3:0> : C<3:0>;
+	Out<6>: aNet2;
+	Out<5>: bNet2;
+	Out<4>: cNet2;
+	Out<3>: dNet2;
+	Out<2>: eNet2;
+	Out<1>: fNet2;
+	Out<0>: gNet2;
+	wolfe_Vdd : Vdd;
+	wolfe_Gnd : GND;
+
+INSTANCE "$OCTTOOLS/lib/musa/yellowseg":physical
+	NAME = "Segment3"
+	[230,10]
+	A: aNet2;
+	B: bNet2;
+	C: cNet2;
+	D: dNet2;
+	E: eNet2;
+	F: fNet2;
+	G: gNet2;
+	COMMON: GND;
+
+
+INSTANCE "decoder":logic
+	In<3:0> : B<3:0>;
+	Out<6>: aNet1;
+	Out<5>: bNet1;
+	Out<4>: cNet1;
+	Out<3>: dNet1;
+	Out<2>: eNet1;
+	Out<1>: fNet1;
+	Out<0>: gNet1;
+	wolfe_Vdd : Vdd;
+	wolfe_Gnd : GND;
+
+INSTANCE "$OCTTOOLS/lib/musa/greenseg":physical
+	NAME = "Segment2"
+	[120,10]
+	A: aNet1;
+	B: bNet1;
+	C: cNet1;
+	D: dNet1;
+	E: eNet1;
+	F: fNet1;
+	G: gNet1;
+	COMMON: GND;
+
+INSTANCE "decoder":logic
+	In<3:0> : A<3:0>;
+	Out<6>: aNet;
+	Out<5>: bNet;
+	Out<4>: cNet;
+	Out<3>: dNet;
+	Out<2>: eNet;
+	Out<1>: fNet;
+	Out<0>: gNet;
+	wolfe_Vdd : Vdd;
+	wolfe_Gnd : GND;
+
+INSTANCE "$OCTTOOLS/lib/musa/redseg":physical
+	NAME = "Segment1"
+	[10,10]
+	A: aNet;
+	B: bNet;
+	C: cNet;
+	D: dNet;
+	E: eNet;
+	F: fNet;
+	G: gNet;
+	COMMON: GND;
+
+ENDMODEL;

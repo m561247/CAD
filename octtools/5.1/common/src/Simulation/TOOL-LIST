@@ -1,0 +1,7 @@
+#!/bin/csh -f
+
+# non X programs
+echo steps crystal oct2hilo xgSteps
+
+# X programs
+if ( ! $?NO_X ) echo musa rpc-crystal  rpc-steps

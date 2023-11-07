@@ -1,0 +1,23 @@
+MODEL 4bitadder:symbolic;
+TECHNOLOGY scmos;
+VIEWTYPE symbolic;
+EDITSTYLE symbolic;
+
+OUTPUT sum<3:0>, cout: carry<4> ;
+INPUT a<3:0>, b<3:0>, cin: carry<0>;
+SUPPLY Vdd;
+GROUND GND;
+
+ARRAY %i FROM 0 TO 3 OF
+  INSTANCE fulladder:symbolic
+    !  gate equivalent of MSU fulladder
+    a:    a<%i>;
+    b:    b<%i>;
+    cin:  carry<%i>;
+    sum:  sum<%i>;
+    cout: carry<%i+1>;
+    Vdd:  Vdd;
+    GND:  GND;
+
+ENDMODEL;
+

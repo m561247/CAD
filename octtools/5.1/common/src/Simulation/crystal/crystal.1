@@ -1,0 +1,661 @@
+.\" sccsid "@(#)crystal.1	2.28 (Berkeley) 10/14/88"
+.TH CRYSTAL 1 
+.SH NAME
+crystal \- VLSI timing analyzer
+.SH SYNOPSIS
+.B crystal [file]
+.br
+.SH DESCRIPTION
+Crystal is a semi-interactive program for analyzing the
+timing characteristics of large integrated circuits.  It estimates
+the speed of a circuit and prints out information about the
+critical paths.  If \fBfile\fR is specified, it is read in
+as though the \fBbuild\fR command (see below) had been
+invoked.
+Crystal processes commands from
+the standard input, one per line.  Lines beginning with exclamation
+points are ignored.  Unique abbreviations for commands
+are acceptable.  The order of commands in the input is important.
+Commands are divided into seven groups, which should appear in the
+following order:
+.TP
+Model commands
+These commands modify the circuit and timing models used
+by Crystal, and should appear before the circuit is read
+in.  The model commands are
+\fBmodel\fR, \fBparameter\fR, and \fBtransistor\fR.
+.TP
+Circuit commands
+Used to input and describe the circuit being analyzed.  The
+circuit commands are \fBbuild\fR, \fBbus\fR, \fBcapacitance\fR,
+\fBinputs\fR, \fBoutputs\fR, and \fBresistance\fR.
+.TP
+Dynamic node command
+This group includes the single command \fBmarkdynamic\fR, used
+to find and mark the dynamic memory nodes in the circuit.
+.TP
+Check commands
+Includes two commands, \fBcheck\fR, and \fBratio\fR.  These
+commands examine the circuit's structure for suspicious-looking
+electrical features.
+.TP
+Setup commands
+There are three commands in this group, \fBflow\fR, \fBprecharged\fR,
+\fBpredischarged\fR,
+and \fBset\fR.  These commands are used to restrict the analysis
+performed for a given clock phase.
+.TP
+Delay command
+The \fBdelay\fR command invokes the actual delay analysis.
+.TP
+Miscellaneous commands
+These commands may be invoked at any time:  \fBalias\fR, \fBcritical\fR,
+\fBdump\fR, \fBfillin\fR,
+\fBhelp\fR, \fBoptions\fR, \fBquit\fR, \fBprcapacitance\fR,
+\fBprfets\fR, \fBprnodes\fR, \fBprresistance\fR, \fBsource\fR,
+\fBstatistics\fR, \fBundump\fR, and \fBwatch\fR.
+.LP
+The only command outside these groups is the \fBclear\fR command,
+which resets information that was set by setup and delay commands.
+After \fBclear\fR, input may resume with anything except model
+commands.
+
+.SH "NODE NAMES"
+Where node names are called for in commands, they can
+appear in any of several forms:
+.IP [1]
+A simple node name.
+.IP [2]
+A name of the form ``a<x:y>b''.  Crystal tries all names of the
+form ``acb'' where c ranges from x to y.  To get a ``<'' character
+in the name, precede it with a backslash.
+.IP [3]
+A name of the form ``*a''.  Crystal searches the entire node table
+for names containing the string ``a''.  Note:  this kind of name
+specification is slow on large chips, since the entire table has
+to be searched.  For example, on a sample 45000 transistor chip,
+20 seconds of CPU time were used for each search.
+
+.SH "GRAPHICAL COMMAND FILES"
+Several of the commands can be used with the \fB-g\fR
+argument to generate output
+for graphical display of information.  At present, Crystal
+will generate command files for either Caesar, Magic, or Squid.
+To use Caesar command files, run Caesar on the
+chip and pick a view large enough to hold the whole chip (e.g.
+with the ``v'' short command).  Then use the ``:source'' long
+command to read in the command file.  The command files place
+labels and paint on the error layer to mark places, and also
+push boxes onto the stack so that you can step from one label
+to the next using the ``:popbox'' long command.  To use Magic
+command files, run Magic on the layout, place the cursor in the
+window containing the layout, and use the ``:source'' long
+command to read in the command file.  A collection of feedback
+areas will be generated.  These can be examined using Magic's
+``:feedback'' command.
+
+.SH COMMANDS
+.TP
+.B "alias file"
+Read in aliases from the information in \fBfile\fR.  Each
+line of the alias file is of the form ``= name name name ...''
+where the first name is a node name that appears in the .sim
+file and each additional name is another name for the same
+node.  After the \fBalias\fR command, any of the names may be
+used to refer to a node.  An alias file shouldn't be read in until
+after the .sim file has been read.
+.TP
+.B "build file"
+Build a circuit description from the information in \fBfile\fR,
+which must be in .sim format.  This command is unnecessary if
+a file is specified on the shell command line, but is necessary
+if non-standard models are used.
+.TP
+.B "block node node ..."
+Terminate all critical paths at this (blocking) node and don't propogate paths
+beyond this node.
+This command is useful in determining the maximum delay of combinational
+logic between clocked nodes (without having to reread the sim file to
+analyze each phase).
+That is, determine the maximum delay of circuit effected by ONE
+clock phase.
+Note that the user must be sure that delay paths between ANY blocked
+nodes cannot occur.
+This information will be hidden by declaring these nodes as blocked.
+For example, the user must declare all the sources (and drains)
+of the pass transistors driven by the other phases as blocked nodes.
+Then start a critical path search at the clock (e.g., phase0) and
+appropriate inputs.
+Another way to measure maximum interclock delay is to
+set the other clocks to 0 (set 0 phase1 ...)
+and clock the desired phase.
+However, the computation to propogate the effects of a 0 clock phase into
+the other parts of the circuitry (driven by the other clocks) is usually
+meaningless (not of interest in determining the delay of effected circuitry).
+Since "block" is mainly ment to improve the system performance by
+ignoring parts of a circuit, I would recommend against using it unless
+you too have a very large circuit.
+.TP
+.B "bus node node ..."
+This command should only rarely be needed.
+Each of the nodes gets marked as a bus.  When a node is a bus,
+Crystal assumes that delays through the node can be treated
+as separate stages to the node and from the node.
+Nodes with large capacitances are automatically
+considered to be busses:  see the \fBbus\fR option below.
+.TP
+.B "capacitance pfs node node ..."
+The parasitic capacitance value for each \fBnode\fR is set to the
+given value.  This overrides the capacitance estimate
+made from the mask layout.
+.TP
+.B "check"
+Make a series of static electrical checks on the circuit.  This
+command prints out information about nodes with no transistors
+connected to them, nodes that are not driven, nodes that don't
+drive anything, transistors that are permanently forced off,
+transistors connecting Vdd and GND, and transistors that are
+bidirectional but haven't been marked with a flow attribute.
+.TP
+.B "clear"
+All information set by setup and delay commands is cleared,
+in preparation for an additional timing analysis.  Information
+set by circuit commands isn't affected.  After the \fBclear\fR
+command, input may continue with any commands except those in
+the model group.  Information from the \fBwatch\fR command is
+also cleared.
+.TP
+.B "critical [file] [-g graphicsfile] [-s spicefile] [pathnumber][m][w]"
+Print out information about the critical paths.  If \fBpathnumber\fR
+isn't specified, then the slowest path is printed.  If it is specified,
+the \fBpathnumber\fR'th slowest path is printed.  If \fBpathnumber\fR
+is followed by an \fBm\fR, then the \fBpathnumber\fR'th slowest
+path leading to a memory node is printed.  If \fBpathnumber\fR is
+followed by a \fBw\fR then the \fBpathnumber\fR'th slowest
+path leading to a watched node is printed (see the \fBwatch\fR
+command).  Only the very slowest paths
+are recorded by Crystal, controlled by the \fBpaths\fR, \fBmempaths\fR,
+and \fBwatchpaths\fR options (see the \fBoptions\fR command below).
+Furthermore, Crystal does not record a path if its total delay is
+within .1% of another path already recorded on the list (this is to
+alleviate the problem of the lists getting flooded by essentially
+equivalent paths).
+If the \fBfile\fR argument is given, then output goes to that file
+instead of standard output.
+If the \fB-g\fR
+argument is given, a graphics command file is generated in \fBgraphicsfile\fR.
+If the \fB-s\fR argument is given, a SPICE deck is created in
+\fBspicefile\fR describing the transistors and parasitics along
+the path (no model parameters or body bias voltages are output).
+.TP
+.B "delay node risetime falltime"
+Propagate delay information through the circuit.  Assume that the
+worst-case time for \fBnode\fR to become 1 is \fBrisetime\fR, and
+the worst-case time for it to become 0 is \fBfalltime\fR.  Propagate
+timing information through nodes that \fBnode\fR can impact, until
+the worst-case settling times for the entire network have
+been found.  A -1 value for \fBrisetime\fR or
+\fBfalltime\fR means that there is no transition to that level.
+.TP
+.B "dump file"
+This is a special wizards-only command for saving critical
+path information in a way that Crystal can read it back later
+using the \fBundump\fR command, without having to reprocess
+the whole .sim file.  Don't use this command unless you
+really know what you are doing.
+.TP
+.B "fillin time/edgeSpeed inFile outFile keyword path path ..."
+This command is useful in order to interface Crystal to other
+programs that process Crystal's output.  \fBInFile\fR is read
+by the command, and its contents are copied to \fBoutFile\fR.
+Along the way, each occurrence of \fBkeyword\fR is replaced
+by a number from one of the critical paths (each \fBpath\fR is
+specified as for the \fBcritical\fR command).  If \fBtime\fR
+is specified, then the time at the end of each stage along the
+critical path is used to replace occurrences of \fBkeyword\fR,
+with smaller times replacing earlier occurrences.  If \fIedgeSpeed\fR
+is specified, then the edge speeds from the stages of the path are
+used to replace \fBkeyword\fRs.  If more than one \fBpath\fR is
+specified, the paths are processed in order of their occurrence on
+the command line.  If there are more stages in the \fBpath\fRs
+than occurrences of \fBkeyword\fR, then the last stages are ignored.
+If there are more occurrences of \fBkeyword\fR than stages, only
+the first few \fBkeyword\fRs will be replaced.  If no \fBpath\fR
+is specified, it defaults to ``1''.
+.TP
+.B "flow direction attribute attribute ..."
+For each source/drain \fBattribute\fR given, mark the attribute so that
+information will only be permitted to flow in the given
+\fBdirection\fR.  \fBDirection\fR may be either \fBin\fR,
+\fBout\fR, \fBoff\fR, \fBignore\fR, or \fBnormal\fR.  \fBIn\fR and
+\fBout\fR require information to flow only in the specified
+direction.  \fBOff\fR does not permit any flow through
+the tagged transistors.
+If \fBignore\fR is specified then no restrictions are
+enforced whatsoever.  \fBNormal\fR returns the flow to its
+normal operation.
+.TP
+.B "help"
+Print a short listing of the valid commands.
+.TP
+.B "inputs node node ..."
+Mark each of the nodes as an input.  This has two effects.  First,
+it indicates that the node can take on values of either 0 or 1
+(otherwise, Crystal may conclude that the node can't ever reach
+one or both values).  Second, if the node isn't also
+an output node, then Crystal assumes that the timing of
+the node is fixed by the outside world and is not affected
+by anything in the circuit:  if no \fBdelay\fR
+command is given for the node, Crystal assumes the value
+never changes.
+.TP
+.B "markdynamic node value node value ..."
+This statement causes Crystal to examine all nodes and mark
+dynamic memory nodes.  A node is considered to be a dynamic
+memory node if it is electrically isolated when each \fBnode\fR
+takes its corresponding \fBvalue\fR.  Normally the command
+is invoked with all of the clock phases turned off, e.g.
+``markdynamic Phi1 0 Phi2 0 Phi3 0 Phi4 0''.
+.TP
+.B "model name"
+Use \fBname\fR as the model for delay
+calculations.  Currently, two models, \fBrc\fR and \fBslope\fR,
+are available.  The \fBrc\fR model approximates each transistor
+with a fixed resistance value.  The \fBslope\fR model uses the gate
+rise and fall speeds to modify the effective resistance.
+.TP
+.B "options [name [value]] [name [value]] ..."
+This command is used to see and set a variety of internal
+options used by Crystal.  \fBOptions\fR with no arguments
+prints out the current setting of all options.  Each option
+consists of an option name and perhaps a value for the option.
+Some options do not have values.  See the section
+``OPTIONS'' below for the available options.
+.TP
+.B "outputs node node ..."
+Marks each of the given nodes as an output.  Crystal assumes
+that information (0's and 1's) flows from sources (supply
+rails and inputs) to targets (gates and outputs).  If a piece
+of circuit doesn't drive any gates, Crystal won't compute
+delays through it unless the result nodes are labeled as
+outputs.
+Note that critical paths may pass through output nodes if other
+logic is attached.  Use "block" to terminate critical paths at
+specific nodes.
+.TP
+.B "parameter [name] [value]"
+This statement is used to see or change several overall
+model parameters.  \fBName\fR is the name of a parameter,
+and \fBvalue\fR is a new value for that parameter.  If both
+\fBname\fR and \fBvalue\fR are specified, then the value of the
+parameter is changed.  If only \fBname\fR is specified, then the
+current value is printed.  If neither \fBname\fR or \fBvalue\fR
+is specified, then the values of all parameters are printed.
+The valid parameter names are listed in the section
+``MODEL PARAMETERS'' below.
+.TP
+.B "prcapacitance [-g file] [-t threshold] node node ..."
+Print out information for each of the indicated nodes whose total
+capacitance is at least \fBthreshold\fR pf (the default is 0 if the
+argument isn't present).  If no node names are
+given, then all nodes in the circuit are checked.
+The \fB-g\fR argument can be used to generate a graphical
+command file.
+.TP
+.B "precharged node node ..."
+Mark each of the given nodes as precharged.  This means that
+only falling transitions are considered during timing analysis.
+Each of the nodes is also treated as a bus.
+.TP
+.B "predischarged node node ..."
+Mark each of the given nodes as precharged to 0.  This means
+that only rising transitions are considered during timing
+analysis.  Each of the nodes is also treated as a bus.
+.TP
+.B "prfets node node ..."
+For each \fBnode\fR that is given, information is printed about
+all transistors whose gates attach to the node.  If no node
+is specified, then information is printed about all transistors
+in the circuit.
+.TP
+.B "prnodes node node ..."
+Print out delay information for each of the indicated nodes.
+(A -1.00ns indicates that the node delay value has not been set.)
+If no node names are given, then all nodes in the circuit printed.
+.TP
+.B "prresistance [-g file] [-t threshold] node node ..."
+Print out information for each of the indicated nodes whose
+internal resistance exceeds \fBthreshold\fR ohms.  If no
+threshold is given, 0 is used by default.  If no node
+names are given, then check all nodes in the circuit.
+The \fB-g\fR argument is used to
+generate a graphics command file.
+.TP
+.B "quit"
+Exit Crystal and return to the shell.  End-of-file on the
+input stream will also cause Crystal to exit.
+.TP
+.B "ratio [limit value] [limit value] ..."
+Examine the circuit for nMOS ratio violations.  Normal circuits
+are expected to have pullup/pulldown ratios between 3.8 and 4.2.
+Pass transistor driven circuits must have ratios between 7.8
+and 8.2.  Ratios outside this range are printed out.  If the
+same illegal pullup/pulldown ratio is duplicated more than
+20 times, only the first 20 are printed.  The limits of
+acceptability may be
+changed by providing arguments to the ratio command.  \fBLimit\fR
+must be one of \fBnormallow\fR, \fBnormalhi\fR, \fBpasslow\fR,
+or \fBpasshi\fR (unique abbreviations are acceptable).
+.TP
+.B "resistance ohms node node ..."
+The internal node resistance associated with each \fBnode\fR
+is set to \fBohms\fR.  This overrides the value computed from
+the mask layout.
+.TP
+.B "set value node node ..."
+Force each \fBnode\fR always to have the given \fBvalue\fR (0 or 1).
+Furthermore, do a static logic simulation
+to propagate this information as far as
+possible throughout the network.
+Thus, if the input to an inverter or NAND gate is forced to 0,
+the output is forced to 1, and so on.
+.TP
+.B "source file"
+Read commands from \fBfile\fR.  On end-of-file, go back to reading
+commands from the previous source.  Source files may be nested.
+.TP
+.B "statistics"
+Prints a variety of statistics gathered internally by Crystal.
+Probably not useful except to a system maintainer.
+.TP
+.B "transistor [name [field value] [field value] ...]
+The \fBtransistor\fR command is used to define new transistor types,
+or see or modify existing types.  \fBName\fR is the name of
+a transistor type, \fBfield\fR is the name of a field associated
+with the transistor, and \fBvalue\fR is a new value for that
+field.  The valid field names are listed in the section
+``TRANSISTOR FIELDS'' below.  If
+\fBname\fR matches the name of an existing transistor
+type (see below for the predefined types), then the \fBfield\fR
+and \fBvalue\fR arguments are used to change some of its fields.
+If \fBname\fR is not an existing transistor type, a new type
+is created.  If there are no arguments to the \fBtransistor\fR
+command, then all fields for all defined types are printed out.
+If \fBname\fR is supplied with no field values, then all the
+fields for that transistor are printed out.
+To use a user-defined type for a transistor, place an attribute
+on the gate of the transistor.  The the attribute contains the
+name of the transistor type to use for it.
+.TP
+.B "totalcapacitance"
+Print out the total of all node capacitance from inputs and remaining
+nodes.  This capacitance can be used to estimate the maximum dynamic
+power required by the circuit.
+.TP
+.B "undump file"
+This is another wizards-only command.  Don't use it unless
+you really know what you are doing.  The \fBundump\fR command
+is provided to read back the output of the \fBdump\fR command,
+so that Crystal can get critical paths without having to
+re-extract them.
+.TP
+.B "watch node node ..."
+Mark each of the given nodes so that delays to them will be
+recorded on the list of slowest watched nodes (these nodes
+will still be recorded on the lists of arbitrary and memory
+nodes too, if they are among the slowest in those categories).
+The watch flags are cleared by the \fBclear\fR command.
+
+.SH "OPTIONS"
+The options defined below are used in various and sundry
+places inside Crystal to control calculations and printout.
+They can be changed with the \fBoptions\fR command.
+.TP
+.B "bus value"
+Gives the amount of capacitance a node must have to automatically
+be considered a bus by Crystal (default is 2 pfs).
+.TP
+.B "graphics style"
+Sets the style for graphical output.  Currently, three styles
+are understood: \fBcaesar\fR, \fBmagic\fR, and \fBsquid\fR
+(default is \fBcaesar\fR).
+.TP
+.B "limit value"
+Gives the maximum of stage delays Crystal will calculate before
+giving up in despair (default is 200000).
+.TP
+.B "mempaths value"
+Gives the number of worst-case paths Crystal will record for
+delays to memory nodes (default is 5, maximum is 100).
+.TP
+.B "noprintedgespeeds"
+When printing critical paths, print only the delay to each node,
+without the edge rise or fall speeds (default).
+.TP
+.B "noseedelays"
+Tells Crystal not to print out information about delays as they
+are calculated in \fBdelay\fR commands (default).
+.TP
+.B "noseedynamic"
+Tells Crystal not to print out the dynamic memory nodes as they
+are found in the \fBmarkdynamic\fR command (default).
+.TP
+.B "noseeflows"
+Tells Crystal not to print out information while marking the flow direction
+of transistors in response to the first \fBset\fP or \fBdelay\fP command.
+.TP
+.B "noseesettings"
+Tells Crystal not to print out nodes when they are set to values
+during the \fBset\fR command (default).
+.TP
+.B "paths value"
+Gives the number of worst-case paths Crystal will record on the
+list of slowest nodes overall (memory nodes and watched nodes will
+also be recorded on lists for each of those categories;  \fBmempaths\fR
+and \fBwatchpaths\fR options are used to control the lengths of
+those lists).  The default is 5 and the maximum is 100.
+.TP
+.B "printedgespeeds"
+When printing critical paths, in addition to printing the delay
+to each node, also print the speed at which the edge rises or falls
+at that node.  This only makes sense when using the slope model.
+.TP
+.B "ratiodups value"
+When printing out ratio errors in the \fBratio\fR command, if
+a number of errors occur with exactly the same erroneous ratio,
+only the first \fBratiodups\fR of these duplicate errors will
+be printed.  The default is 20.
+.TP
+.B "ratiolimit value"
+Controls the maximum number of ratio errors that will be printed
+in any one \fBratio\fR command.  The default is 1000.
+.TP
+.B "seealldelays"
+Causes Crystal to print out each new delay as it is calculated
+during the \fBdelay\fR command.
+.TP
+.B "seeallflows"
+Tells Crystal to print out information while marking the flow direction
+of transistors in response to the first \fBset\fP or \fBdelay\fP command.
+Can help determine if a large portion unconnected circuitry is being needlessly
+searched.
+.TP
+.B "seeallsettings"
+Causes Crystal to print out each node setting as it is found during
+the \fBset\fR command.
+.TP
+.B "seedelays"
+Causes Crystal to print out new delays as they are found
+during the \fBdelay\fR command, but only for nodes whose
+names have alphabetic first characters.
+.TP
+.B "seedynamic"
+Causes Crystal to print out the name of every dynamic node as it
+is found in \fBmarkdynamic\fR.
+.TP
+.B "seeflows"
+Tells Crystal to print out information while marking the flow direction
+of transistors in response to the first \fBset\fP or \fBdelay\fP command,
+but only for nodes whose names have alphabetic first characters.
+Can help determine if a large portion unconnected circuitry is being needlessly
+searched.
+.TP
+.B "seesettings"
+Causes Crystal to print out new node settings during the \fBset\fR
+command, but only for nodes whose names have alphabetic first
+characters.
+.TP
+.B "units value"
+Tells Crystal what units to use when printing out information.
+If \fBunits\fR is 2.0 (default) then a printed value of 1 corresponds
+to 2 microns.
+.TP
+.B "watchpaths value"
+Gives the number of paths to record on the list of slowest watched
+nodes (default is 5, maximum is 100).
+
+.SH "TRANSISTOR FIELDS"
+.PP
+Each transistor type is parameterized by the following fields.
+They can be changed using the \fBtransistor\fR command.
+.TP
+.B "cperarea"
+Gate-channel capacitance of the transistor, in pfs per square micron.
+.TP
+.B "cperwidth"
+Gate-source and gate-drain overlap capacitance, in pfs
+per micron of transistor width.
+.TP
+.B "histrength"
+An integer value giving the logical strength of the transistor
+when it is pulling to Vdd.  This is used in simulation to determine
+which transistor wins when different transistors drive a node
+in different directions (e.g. \fBhistrength\fR for pullup loads is less
+than \fBlostrength\fR for enhancement pulldowns).
+.TP
+.B "lostrength"
+An integer value giving the logical strength of the transistor
+when it is pulling to ground.
+.TP
+.B "on"
+This field has one of three values:  \fBgate0\fR, \fBgate1\fR,
+or \fBalways\fR.  \fBGate0\fR means that the transistor is turned
+on only when the gate is zero (in other words, it is a p-channel
+enhancement device).  \fBGate1\fR means that the transistor is turned on only
+when the gate is one (it is an n-channel enhancement device).  \fBAlways\fR
+means the device is always turned on (it is a depletion device).
+.TP
+.B "rdown"
+The resistance per square of the transistor when it is pulling down.
+Used to calculate delays in the rc model.
+.TP
+.B "rup"
+The resistance per square of the transistor when it is pulling up.
+Used to calculate delays in the rc model.
+.TP
+.B "slopeparmsdown"
+Gives table values used for interpolation in the slope delay model.
+The value consists of any number of triplets.  Each triplet contains
+an edge speed ratio, an effective resistance, and an output edge speed.
+The table is used when the transistor is driving to ground.  The
+\fImkcp\fR program is useful for generating these parameters from
+SPICE model parameters.
+.TP
+.B "slopeparmsup"
+Gives table values used for interpolation in the slope delay model.
+The value consists of any number of triplets.  Each triplet contains
+an edge speed ratio, an effective resistance, and an output edge speed.
+The table is used when the transistor is driving to Vdd.  The
+\fImkcp\fR program is useful for generating these parameters from
+SPICE model parameters.
+.TP
+.B "spicebody"
+\fBSpicebody\fR is the node number to use for the body when
+outputting this type of transistor in SPICE decks.  The
+body node number must be 0-3.  0 is GND,
+1 is Vdd, and 2 and 3 are user-controlled body bias voltages.
+.TP
+.B "spicetype"
+A single letter identifier used as the type of this transistor
+in SPICE decks.
+
+.SH "PREDEFINED TRANSISTOR TYPES"
+.PP
+The following types of transistors are predefined by Crystal.
+When Crystal reads in files, it selects one of the following
+transistor types for each transistor, unless overridden by
+an attribute giving a type not listed below.
+Their fields can be changed using the \fBtransistor\fR command.
+.TP
+.B "nenh"
+Enhancement transistors in nMOS.
+.TP
+.B "nenhp"
+Enhancement transistors in nMOS whose gates are driven by
+pass transistors
+(i.e. any transistor whose gate is not a circuit input and does
+not attach to an \fBnload\fR or \fBnsuper\fR transistor).  Transistor
+types are switched between \fBnenh\fR and \fBnenhp\fR during
+flow marking.
+.TP
+.B "ndep"
+Depletion devices in nMOS (most depletion devices are turned
+into either type \fBnload\fR or \fBnsuper\fR by Crystal).
+.TP
+.B "nload"
+nMOS depletion devices where the gate connects to either
+source or drain and the other terminal connects to Vdd.
+.TP
+.B "nsuper"
+nMOS depletion devices where either the source or drain
+connects to Vdd but the other terminal doesn't connect to
+the gate.
+.TP
+.B "nchan"
+N-channel enhancement devices in CMOS.  This is provided
+separately from type \fBnenh\fR as a convenience to accommodate
+different delay characteristics in nMOS and CMOS.
+.TP
+.B "pchan"
+P-channel enhancement devices in CMOS.
+
+.SH "MODEL PARAMETERS"
+The following are the model parameters that aren't associated
+with particular transistor types.  They are used in the \fBparameter\fR
+command.
+.TP
+.B "diffcperarea"
+Capacitance between diffusion and substrate, in pfs per square micron.
+.TP
+.B "diffcperperim"
+Sidewall capacitance of diffusion, in pfs per micron of perimeter.
+.TP
+.B "diffresistance"
+Resistance of diffusion, in ohms per square.
+.TP
+.B "metalcperarea"
+Capacitance between metal and substrate, in pfs per square micron.
+.TP
+.B "metalresistance"
+Resistance of metal, in ohms per square.
+.TP
+.B "polycperarea"
+Capacitance between polysilicon and substrate, in pfs per square micron.
+.TP
+.B "polyresistance"
+Resistance of polysilicon, in ohms per square.
+.TP
+.B "vdd"
+The supply (logic 1) voltage.  Used in the slope model, and also
+in outputting SPICE decks.
+.TP
+.B "vinv"
+The logic threshold voltage (usually Vdd/2).  Used in the slope model
+to compute edge speeds for resistors.
+
+.SH "SEE ALSO"
+.PP
+mkcp(1)
+
+.SH AUTHOR
+John Ousterhout, (few) changes (to version 4) by Fred W. Obermeier

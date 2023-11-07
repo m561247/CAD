@@ -1,0 +1,24 @@
+MODEL greenled:physical;
+
+	TECHNOLOGY scmos;
+	VIEWTYPE PHYSICAL;
+	EDITSTYLE PHYSICAL;
+
+	INPUT ANODE;
+	INPUT CATHODE;
+
+ENDMODEL;
+
+(FACET greenled:physical
+	(LAYER MET1
+		(BOX -90 -30 -30 30 cathode_box)
+		(BOX 30 -30 90 30 anode_box)
+	)
+	(FTERM ANODE (ALIAS anode_box))
+	(FTERM CATHODE (ALIAS cathode_box))
+)
+(FACET greenled:physical:interface
+	(SPROP CELLTYPE "I/O")
+	(SPROP "I/O-MODEL" "LED")
+	(SPROP "LED_COLOR" "GREEN")
+)

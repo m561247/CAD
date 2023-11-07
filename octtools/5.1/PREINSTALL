@@ -1,0 +1,79 @@
+#!/bin/csh -f
+
+set B = "PREINSTALL:"
+echo $B "Octtools 5.1: Preinstall script." 
+
+if ( $#argv != 1 ) then
+	echo "usage: PREINSTALL [keep|remove]"
+	echo "    keep - keeps compressed archives"
+	echo "  remove - remove compressed archives after use (useful if space is tight)"
+	exit 1
+endif
+
+if ( $1 == "keep" ) then
+    set spaceIsTight = 0
+else if ( $1 == "remove" ) then
+    set spaceIsTight = 1
+else 
+     echo $B "First argument must be either `keep' or `remove', not `$1'"
+     exit 1
+endif
+
+
+if ( -e OCT5.1.base.tar.Z && ! -e checksum.tmp ) then
+     echo $B "Verifying checksums ..." 
+     sum *5.1*.Z > checksum.tmp
+     diff checksum.tmp CHECKSUMS
+     if ($status) then 
+	  echo $B "Warning: checksum error"
+	  echo $B "Your version of the distribution may be corrupted"
+	  exit 1
+     endif
+     echo $B "Checksums are OK."
+endif
+
+
+echo $B "Unfolding all parts of Octtools 5.1..."
+
+
+
+foreach part ( OCT5.1*.Z )
+    echo $B "Unfolding $part ..."
+    zcat $part | tar xf -
+    if ( $status != 0 ) then
+	echo 
+	echo $B
+	echo $B
+	echo $B "Unfolding of $part failed."
+	echo $B "Please fix whatever problem and try again"
+	exit 1
+    endif
+    if ( $spaceIsTight ) then
+	echo $B "Removing $part"
+        \rm $part
+    endif
+    echo $B "done $part."
+end
+
+
+echo 
+echo 
+echo $B 
+echo $B 
+echo $B "If you so desire, you can unfold the optional parts by hand"
+echo $B "Optional parts are:"
+foreach i (  OPT* )
+    echo "             ---  $i"
+end
+echo $B "You can use the following command: zcat [optional part] | tar xf -"
+echo $B
+echo $B
+echo $B "Done PREINSTALL: now you should run INSTALL." 
+echo $B
+echo $B 
+echo $B "Remember to set the environment variable OCTTOOLS in your .cshrc file"
+echo $B "You should probably have a line saying:"
+echo $B "setenv OCTTOOLS $cwd/`ARCHITECTURE`"
+echo 
+echo 
+

@@ -1,0 +1,23 @@
+CCT      (r1,f1,mr1,mf1,oc1,r2,f2,mr2,mf2,oc2,ic1,ic2) crosscoupnandlatch (Q,QB,RST1,SET2)     
+                                        
+capacitor(ic1) cap1(RST1);
+capacitor(ic2) cap2(SET2);
+capacitor(oc1) cap3(Q);
+capacitor(oc2) cap4(QB);
+
+REGISTER(r1,f1,mr1,mf1,0) Q = LOADCASE {RST1,SET2},
+                              ?0 = 1,
+                              01 = 0,
+                              0X = X
+                             ENDCASE;
+REGISTER(r2,f2,mr2,mf2,0) QB = LOADCASE {RST1,SET2},
+                               0? = 1,
+                               10 = 0,
+                               X0 = X
+                              ENDCASE; 
+                   
+** WIRE DECLARATIONS
+
+INPUT   RST1 SET2;
+.
+

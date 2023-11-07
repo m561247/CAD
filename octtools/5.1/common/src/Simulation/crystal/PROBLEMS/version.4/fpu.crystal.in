@@ -1,0 +1,51 @@
+! ********************************************************
+! Input script for FPU crystal analysis:
+! the subtractor portion only.
+! Analysis from the FPU group: B.K. Bose
+! Trace anlysis check by Fred W. Obermeier, April 24, 1988
+! ********************************************************
+!
+! Set analysis parameters for FPU
+source /chip2/fpu/crystal/cry.hp
+!
+! FOR ROSEMARY: ***********************************
+! For FPU with pads:
+! build /chip2/fpu/layout/fpu.sim
+! alias /chip2/fpu/layout/fpu.al
+!
+! For FPU without pads:
+build /chip2/fpu/layout/fpu.nopads.sim
+alias /chip2/fpu/layout/fpu.nopads.al
+!
+! FOR EROS: ***************************************
+! source /eros12/bk/hoa/cry.hp
+! build /eros12/bk/fpu.sim
+! alias /eros12/bk/fpu.al
+!
+! *************************************************
+!
+! Set various options
+options graphics magic
+options units 0.8
+! Set options for tracing the analysis
+options seeallsettings
+options seealldelays
+! options seeallflows 
+!
+inputs exp_0/EGsubEL_0/adder18_0/precond18_0/precond.new_0[<0:17>]/A
+inputs exp_0/EGsubEL_0/adder18_0/precond18_0/precond.new_0[<0:17>]/B
+outputs exp_0/EGsubEL_0/adder18_0/sum17_0/sumbit.new_0[<0:16>]/Si
+!
+! Don't consider paths that pass through these nodes:
+block exp_0/EGsubEL_0/adder18_0/sum17_0/sumbit.new_0[<0:16>]/Si
+!
+! Do the critical path checks:
+delay exp_0/EGsubEL_0/adder18_0/precond18_0/precond.new_0[<0:17>]/A 2 2
+stat
+delay exp_0/EGsubEL_0/adder18_0/precond18_0/precond.new_0[<0:17>]/B 2 2
+stat
+!
+critical 1
+critical -s EAsubB.spice -g EAsubB.graph 1
+!
+quit

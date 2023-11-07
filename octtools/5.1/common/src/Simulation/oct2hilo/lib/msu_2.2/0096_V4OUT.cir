@@ -1,0 +1,9 @@
+CCT 	V4out(pad, out)
+
+BUFIF0	G1(pad, out, enable);
+
+INPUT 	out;
+TRI	pad;
+SUPPLY0 enable;
+.
+

@@ -1,0 +1,9 @@
+CCT	V4in(in, inb, pad)
+
+NOT	G1(inb, pad)
+	G2(in, inb);
+
+INPUT	pad;
+WIRE	in inb;
+.
+

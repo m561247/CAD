@@ -1,0 +1,8 @@
+CCT	V4outm(pad, out)
+
+V4out	G1(pad, out);
+
+INPUT 	out;
+TRI	pad;
+.
+

@@ -1,0 +1,707 @@
+.TH MUSA 1OCTTOOLS "24 July 1989"
+.SH NAME
+musa \- Multi-level simulator version 5
+.SH SYNTAX
+musa [-cMPwiov] oct_cell[:view]
+.br
+musa -s[-cMPwiov] sim_file(s)
+
+.SH WHAT IS NEW IN VERSION 5
+Version 5 of musa has been cleaned up in many key routines, in order to make the software
+more maintainable. New commands have been added: see "repeat", "sleep". The constants 
+can now be used as arguments in "setvect" and in "verify". New binary operations are
+defined on constants. The latch model has been rewritten to allow Set/Reset latches.
+The 7-seg display graphics has been improved. 
+
+All numeric entries are now decimal unless prefixed by H for hexadecimal
+or B for binary.
+
+.SH DESCRIPTION
+.I Musa
+is a multi-level simulator.  Its primary mode of operation is switch
+level simulation of MOS transistors.  Provisions have been made within
+.I musa
+to allow simulation of higher level constructs such as logic gates,
+latches, and memory cells. 
+.PP
+The main command line options are:
+.TP
+.B -s
+The list of files that follow the options are standard sim(5OCTTOOLS) format.
+.TP
+.B -c
+By default instances in a hierarchy are displayed using their
+"instance path" using the character `/' as a separator (i.e.
+/top/middle/bottom).  The \fB-c\fP option is followed by a single
+character to be used instead of `/' as a separator.
+.TP
+.B -M
+Turn ON the merging optimization (described below).
+.TP
+.B -P
+Turn ON the pulldown/pullup optimization (described below).
+.TP
+.B -w
+The floating point number that follows \fB-w\fP specifies the threshold
+for weak transistors.  Transistors with W/L ratios that are strictly
+less than the threshold are considered weak.  The default threshold is
+1.0.
+.TP
+.B -i
+A command file to be executed upon loading of design.
+.TP
+.B -o
+The name of a log file.
+.TP
+.B -v
+turn on verbose flag. Only a few extra diagnostics are printed.
+
+.SH "GENERAL STRUCTURE"
+.PP
+The
+.I musa
+data structure is set up as a collection of instances and nodes.
+(See nodeinfo and instinfo commands described below.)
+Each instance represents a functional unit.  An instance may be a
+transistor, a network of transistors, a logic gate, or some more
+complex, user-defined unit.  The instances have connections to one
+or more nodes.  (e.g. A transistor connects to three nodes -- one at its
+gate, one at its source, and one at its drain.)
+.PP
+A node may be in any one of 8 states.  Each state has a representative
+letter as shown:
+.ta .5i 3i 3.5i
+.nf
+`o'	Charged low	`i'	Charged high
+`0'	Driven low	`1'	Driven high
+`O'	Set low by the user	`I'	Set high by the user
+`x'	Uninitialized	`X'	Driven both high and low
+.fi
+.PP
+Unlike many other simulators,
+.I musa
+treats every node as a storage node.  Once a node is charged high or
+low, it will remain that way until the node is driven by an instance
+or set by the user.  It is important to note that
+.I musa
+does not model charge sharing.  If a `o' node and a `i' node are
+electrically connected by a transistor, the nodes will not change in
+value.  This would not be the case in a physical system.
+.PP
+Each node in
+.I musa
+has a counter associated with it.  The counter is used to detect
+oscillations in the simulation.  (This could be caused by a ring of
+inverters, for example.)  If a node is determined to have made
+more than 256 transitions in one simulation step, a warning will be
+printed, and the simulation will be interrupted.
+.I Musa
+will find and report all of the nodes
+which contribute to oscillation in a circuit.
+.PP
+.I Musa
+has two different transistor models, regular and weak.  The current
+carried by a weak transistor is such that it may be overdriven.
+The classic use of a weak transistor is in an NMOS inverter.  The
+pull-up device of an NMOS inverter is weak.  When the pull-down
+transistor is off, the output is pulled high by the weak transistor.
+When the pull-down device is on, the pull-up is overdriven and the
+output is pulled low.  If the pull-up device were to be regular,
+the result of both transistors being on would be an `X' at
+the output.  Another use of a weak transistor is a static memory cell,
+where values are written by overdriving the cell's internal transistors.
+.PP
+When sim(5OCTTOOLS) format files are being used as input, weak transistors
+are recognized in two ways.  A weak transistor is generated if its
+width/length ratio is less than 1 (or the value specified by \fB-w\fP).
+Alternatively, a weak transistor
+is generated if the sim transistor has a ``weak'' gate attribute:
+.RS
+n g_node s_node d_node 2 4 0 0 g=weak
+.RE
+Magic(1OCTTOOLS) gives an easy mechanism for entering the gate attribute.
+Simply place the label ``weak^'' in the active region of the transistor.
+In Oct, weak transistors can be selected by attaching a property
+``MUSA_WEAK'' to either the transistor instance or the master's
+interface facet.
+.PP
+Switch level simulators have a fundamental flaw in that they cannot
+correctly handle certain transistor configurations (e.g. Pass gate
+exclusive OR circuits).  This limitation may be overcome by restricting
+certain transistors to be unidirectional.  When sim(5OCTTOOLS) format files
+are being used as input, this is done by giving the ``in'' attribute
+for either the source or drain of the transistor:
+.RS
+n g_node s_node d_node 2 4 0 0 g=weak d=in
+.RE
+Magic(1OCTTOOLS) gives an easy mechanism for entering the source or drain
+attribute.
+Simply place the label ``in$'' on the edge of the active region of the
+transistor adjacent to the source or drain.
+In Oct unidirectional transistor are selected by attaching a property
+``DIRECTION'' to either the SOURCE or DRAIN terminal of the transistor
+instance, with value ``INPUT'' or ``OUTPUT'', as appropriate.
+.PP
+In the following sections, the term ``element'' is used.
+An element is the user's name for a node.
+Many element names may correspond to the same node.
+
+.SH HIGHER LEVEL GATES
+.PP
+.I Musa
+will also simulate higher level gates which it reads from the Oct
+database.  (There is no way to specify high level gates in sim(5OCTTOOLS)
+format.)  These gates may be logic gates, as specified in the
+Oct symbolic policy, or they may be latches.  
+.PP
+.I Latches
+.br
+Firstly a latch must be CELLTYPE MEMORY
+and have the property ``SYNCHMODEL'' in its interface facet.
+The ``SYNCHMODEL'' property may take on the values ``TRANSPARENT-LATCH''
+or ``MASTER-SLAVE-LATCH''.  (The Master-Slave latch is two cascaded
+transparent latches with the slave clock fed by the inverted master
+clock). 
+(The  property ``SYNCHACTIVE'' is now obsolete, being replaced by ``ACTIVE_LEVEL'').
+.PP
+The terminals of latches are identified a property called ``SYNCHTERM''
+attached to the interface formal terminals.  The legal values for this
+property are INPUT, OUTPUT, OUTPUTBAR, CONTROL, CONTROLBAR. Set and
+reset terminals can also be labelled as ``SYNCHTERM'' if they are
+synchronous, otherwise they should be labelled as ``ASYNCHTERM''. For
+these terminals, the values SET and RESET are used. Some signals are
+active low. This can be expressed by annotating the corresponding
+terminal with the property ``ACTIVE_LEVEL'' with value ``LOW''. The
+default active level is ``HIGH''.
+A latch must have at least one control,
+exactly one input, and at least one type of output terminal.
+If a latch has both a CONTROL and a CONTROLBAR, only the first
+encountered will be used.  (No checks are made for consistency.)
+.PP
+New models for latches have been defined. The models understand SET
+and RESET. New properties are used to describe these devices:
+ASYNCHTERM (values: SET or RESET) , ACTIVE_LEVEL (HIGH or LOW). These
+props are attached to the formal terminals in the interface facet.
+SYNCHACTIVE is now obsolete and is ignored by musa.
+.PP
+.I LED (Light Emitting Diode)
+.br
+A LED is a cell
+with two terminals: ANODE and CATHODE (names are important here!!). It
+has CELLTYPE = "I/O" and I/O-MODEL="LED". It can have the property
+LED_COLOR with value of "RED", "GREEN" or "YELLOW", with "RED"
+being the default. The LED is displayed in the "panel-window". The
+placement inside the panel window is determined by the translation
+of the instance of the LED (in oct units). A label is printed to the
+right of the LED. The label is either the name of the LED instance or
+the value of the LED_LABEL property attached to the instance.
+.PP
+Each LED has three color intensities: bright , dim , and dark. 
+The bright color is
+used when the LED is on, that is ANODE is 1 and CATHODE is 0. The dim
+color is used when either the anode or the cathode is a X and the dark
+color in all the other cases.
+The LED behaves as an infinite impedance probe, that is it does not
+affect the simulation, but it provides an easy way to monitor the
+behavior of the circuit.
+.PP
+.I Seven Segment Display
+.br
+A seven segment display has nine terminals: COMMON, DP, A, B, C, D,
+E, F, G.  It has CELLTYPE = "I/O" and I/O-MODEL="SEG".  It can have
+the property SEG_COLOR with value of "RED", "GREEN", or "YELLOW", with
+"RED" being the default. The seven segment display is displayed in the
+"panel-window".  The placement inside the panel window is determined
+by the translation of the instance of the segment (in oct units).  A
+label is printed under the segment.  The label is either the name of
+the segment instance or the value of the SEG_LABEL property attached to
+the instance.
+.PP
+As with the LED the segment has three color intensities: bright, dim,
+and dark. The intensity is determine the same as in the LED.
+.PP
+The segments in the display are arranged as follows:
+
+.nf
+	    A
+  -------------
+  |           |
+  |           |
+F |           | B
+  |           |
+  |           |
+  |     G     |
+  -------------
+  |           |
+  |           |
+E |           | C
+  |           |
+  |           |
+  |     D     |   _
+  -------------  |_| DP
+.fi
+
+.I RAM (Random Access Memory)
+.br
+A RAM cell has CELLTYPE=MEMORY, but it has no
+SYNCHMODEL, because a RAM is not a synchronizing element in the sense
+of HUMMINGBIRD (our timing analyzer). The cell must have the property
+MEMORYMODEL with value "RAM" (Actually any value will do for the time
+being).
+The terminals of the RAM must have the RAM_TERM property with value
+one of "READ_ENABLE", "WRITE_ENABLE", "ADDRESS" or "DATA". There
+should be only one READ_ENABLE and one WRITE_ENABLE. Both enables can
+have the property ACTIVE_LEVEL with value "LOW" to specify that the
+signal is active low. The default for ACTIVE_LEVEL is "HIGH".
+The ADDRESS terminals must have the same name and increasing bit
+subscript, starting from 0. This should not be too restrictive because
+that is the way both bdnet and bdsyn work. Similar restriction applies
+to the DATA terminals. 
+
+The entire RAM is initialized to 0, and a warning is issued when a
+location is read which has not been previously written. The RAM can
+only store 0's and 1's, no X's. X's are mapped to 0 with a warning.
+.PP
+
+.I Creating Musa Gates
+.br
+An industrious programmer may create his own musa gates.  Several
+routines must be written and linked into the musa program.  Details
+may be found in the file ``USER_GATES'' in the musa source directory.
+.PP
+
+.SH TERMINAL PROPERTIES
+Use DIRECTION to specify the direction of a terminal.  DIRECTION 
+can be either INPUT or OUTPUT. Notice that DIRECTION must be
+attached to the instance terminal, not to the master terminal.
+
+.SH "SYNOPSIS OF COMMANDS"
+.PP
+Commands in musa are invoked by typing a command name followed by a
+variable number of arguments.  Each command has a two letter
+abbreviated form which can be used in place of the command name.
+.PP
+.I help
+(?)
+.br
+This prints a short synopsis of each command.
+.PP
+.I sleep <number|#constant>
+(sl)
+.br
+Sleeps for a specified number of milliseconds. Useful for demos or
+to monitor simulations which use graphics.
+.PP
+.I lopen log_file
+(lo)
+.br
+Open a file to record all transactions within musa. Only one log file can
+be open at any time.
+.PP
+.I lclose
+(lc)
+.br
+Close the current log file.
+.PP
+.I macro macro_name
+(ma)
+.br
+Define a macro command.  After typing the macro command, musa
+will give a `>' prompt.  At this point, the user should type a sequence
+of commands that make up the macro.  Macros may be nested, as long as
+the nested macro is defined prior to the current macro.  The macro
+definition is concluded by typing ``$end''.
+.PP
+Macro commands may have arguments that are used in the
+definition.  In the definition, these arguments are written as `$1' for
+the first argument, `$2' for the second, etc.  As an example, the
+following macro sets the first argument to one, sets the second
+argument to zero, evaluates, and prints some information.
+.RS
+.nf
+macro seteval
+    set $1 1
+    set $2 0
+    evaluate
+    show "cycle %d\\n" #cycle
+    set #cycle = #cycle + 1
+$end
+.RE
+The "seteval" macro would be invoked by typing:
+.RS
+seteval phi1 phi1_bar
+.RE
+.fi
+.PP
+.I initstate
+(is)
+Initialize all nodes to voltage level 'x'.
+.PP
+.I savestate save_file
+(ss)
+.br
+Save the current state of the simulation.  It is required that
+there be no pending events when a savestate is attempted.
+.PP
+.I loadstate save_file
+(ls)
+.br
+Load a previously saved state back into musa.  The circuit itself
+may not be changed between saving state and loading state back.
+.PP
+.I evaluate
+(ev)
+.br
+Cause all pending changes to be propagated through the network.
+.PP
+.I source [options] source_file
+(sr)
+.br
+Run commands from a file.  (See the section below for a detailed
+description of the options.)
+.PP
+.I step [[options] source_file]
+(st)
+.br
+The "step" command, when followed by a source_file name will begin
+executing the commands in the file one at a time.
+(See the section below for a detailed description of the options.)
+When "step" is given with no arguments, the next command in the
+current source file will be run in a single step fashion.
+.PP
+.I continue
+(co)
+.br
+Continue an running a "evaluate" or "source" that has been interrupted.
+Using continue will preserve the event count, and preserve the node
+transition counts that are used to detect cycles in the network.
+.PP
+.I repeat times command
+(rp)
+.br
+Repeats a command the specified number of times. The times can also be specified
+by a constant.
+.PP
+.I watch watch_set [vectors | elements]
+(wa)
+.br
+Listed vectors and elements are added to the given watch set.
+All elements of a particular watch set are listed together, when a
+watch set is used in the "show" command.
+.PP
+.I listlogix
+(lx)
+.br
+Print the name of all nodes that have a value of `x' or `X'.
+.PP
+.I listinsts [instance_name]
+(li)
+.br
+Print the name of all instances that are contained in the given
+instance.  If no instance name is given, the current working
+instance is used. 
+The name of the instance passed to this 
+command is sent through the regular expression evaluator.  The
+regular expressions recognized are described in the manual
+entry for 
+.PN ed(1).
+This is used when examining instance hierarchies and is
+not useful for sim(5OCTTOOLS) format input.
+.PP
+.I listelems [element_name]
+(le)
+.br
+Print the name of all elements that are contained in the given
+instance.  If no instance name is given, the current working
+instance is used.
+The name of the instance passed to this 
+command is sent through the regular expression evaluator.  The
+regular expressions recognized are described in the manual
+entry for 
+.PN ed(1).
+This is used when examining instance hierarchies and is
+not useful for sim(5OCTTOOLS) format input.
+.PP
+.I printinst
+(pi)
+.br
+Print the name of the working instance
+that is currently being used as the
+default for referencing elements (like a working directory in UNIX).
+This is used when examining instance hierarchies and is
+not useful for sim(5OCTTOOLS) format input.
+.PP
+.I changeinst instance_name
+(ci)
+.br
+Change the working instance that is currently being used
+as the default for referencing elements (like a working directory in
+UNIX).  This is used when examining instance hierarchies and is
+not useful for sim(5OCTTOOLS) format input.
+.PP
+.I equivalent element
+(eq)
+.br
+List all equivalent names (aliases) for an element.
+.PP
+.I makevector vector_name [elements]
+(mv)
+.br
+Define the set of given elements (node names) to be a vector
+named "vector_name".  The elements are listed from most significant bit
+to least significant bit.  Once a vector is defined, it may be set (set
+command) and displayed (show command) as one unit.
+.PP
+Makevector assigns special meaning to the colon (`:') character.  When
+a colon is encountered,
+.I musa
+will generate a series of element names that are numbered consecutively
+from the number preceding the colon to the number following the colon.
+For example:
+.RS
+makevector busA busA<\fI4:0\fP>
+.RE
+is equivalent to
+.RS
+makevector busA busA<\fI4\fP> busA<\fI3\fP> busA<\fI2\fP> busA<\fI1\fP> busA<\fI0\fP>
+.RE
+Similarly:
+.RS
+makevector cellvalues cell\fI1:3\fPvalue
+.RE
+is equivalent to
+.RS
+makevector cellvalues cell\fI1\fPvalue cell\fI2\fPvalue cell\fI3\fPvalue
+.RE
+.PP
+.I "show [\"format_string\"] [watch_sets | vectors | elements | #constants]"
+(sh)
+.br
+Print out the current value of all given vectors, elements, and
+all members of given watch sets.  If a constant (denoted by a leading
+`#') is given, the current value of the constant is printed in decimal.
+By default, vectors are printed in hexadecimal and elements are
+printed in binary.  The optional format_string is a quoted string
+which resembles `C' printf format string.  It may contain regular
+characters which are echoed in the output, %b to insert the binary
+representation of numbers, %h to insert the hexadecimal
+representation of numbers, \n for carriage returns, and \t for tabs.
+.PP
+.I set [vector | element] [ value | \#constant ]
+(se)
+.br
+Assign the value to the given vector or element.  The value is
+assumed to be a binary number (1's and 0's).  When an element is set,
+it is held at the given value, regardless of the state of the
+simulation.  An `x' may be used in place of the binary digit will allow
+the corresponding node to change as the simulation dictates.
+Hexadecimal values may be specified by preceding the number with an
+`H'.  In the case of a hexadecimal number, an `x' represents four `x'
+bits.
+.PP
+.I "set \#constant expression"
+(se)
+.br
+Set may also be used to set the value of constants.
+Constants are denoted by a leading `#'.  The expression from which
+the constant is set is evaluated from left to right and may contain
+other constants, integer numbers, `=', `+', `-', `*', `/', `%', `|',`&',`^', '>', '<' the last
+operations being bitwise or, and, xor, shift right, and shift left respectively.
+Be careful to assure that all operators, numbers, and constants are
+separated by spaces.
+.PP
+.I "verify [vector | element] [ binaryvalue | #constant ] "
+(ve)
+.br
+Check to see if the vector or element has the given value.  The value can be
+a constant or an alphanumeric string 
+containing  1's, 0's, X's, and .'s.  An `X' will match the `X' or `x'
+node states in the vector or element.  A `.' is a don't care and
+will match any value in the vector or element.
+Hexadecimal values may be specified by preceding the number with an
+`H'.  In the case of a hexadecimal number, an `X' represents four `X'
+bits, and a `.' represents four `.' bits.
+If the verify fails, an error message is printed.
+.PP
+.I nodeinfo [elements]
+(ni)
+.br
+Print interesting information about a node.  The value of the
+node is printed along with the node's fanin and fanout.  This command
+is very useful in inspecting the state of the network.
+.PP
+.I instinfo [instances]
+(ii)
+.br
+Print interesting information about an instance (transistor or
+more complex instances).  For transistor networks, the logic function
+is listed along with its current state (off or on).  Also, the nodes
+that are connected to the instance's terminals are listed.  This
+command is very useful in inspecting the state of the network.
+.PP
+.I backtrace element [levels]
+(bt)
+.br
+Prints information about the instances which are responsible for
+driving the selected node.  If the levels parameter is given, backtrace
+will be called recursively on nodes which fanin to the given instance.
+The levels parameter tells
+.I musa
+how many levels to backtrace.
+.PP
+Backtrace does not simply list the instances that are connected to a
+node, it lists instances which
+.I drive
+a node.  This makes it particularly useful for answering the question,
+"What caused this node to be this value?"
+.PP
+.I "setbreak [vector | element] value"
+(sb)
+.br
+Not implemented yet
+.PP
+.I "setplot plotname [width height] [topleft.x topleft.y]"
+(spl)
+.br
+Open a graph with name 'plotname'. Width, height and coordinates of
+the top left corner of the window are specified in pixels. If the
+width, height, or coordinates of top left corner of window are
+ommited then the user will be prompted to place window.  Any number
+of graphics window can be open at the same time.
+.PP
+.I "plot plotname node {node}"
+(pl)
+.br
+Plot the voltage of node in the graph called 'plotname'.  You are
+limited to eight plots per graph.
+.PP
+.I "saveplot plotname [filename]"
+(svpl)
+.br
+Saves the plots in the graph 'plotname' in the file 'filename'. If
+no file name is specified then one will be generated.  The
+file can be processed through xgraph to obtain a hardcopy.
+.PP
+.I "destroyplot plotname"
+(dpl)
+.br
+Destroy the named plot.
+.PP
+
+.SH "HOW TO DO PLOTS ON PLOTS"
+.PP
+The logic simulator is event driven, but it does not have any ides about timing of events.
+In order to produce meaningful plots timing has been added as follows.
+There are two scales of time: a macro scale and a micro scale. At the
+beginning of each evaluation operation macroTime is incremented by
+macroTimeStep (which, by
+default, is  1.0) and microTime is reset to 0.0. Within the same
+evaluation, microTime is incremented by microTimeStep (default 0.01) everytime there is a
+change in the  voltage of a node which has to be plotted.
+.PP
+In future versions, there will be ways to set the values of
+macroTimeStep and microTimeStep.
+.PP
+In order to obtain a hardcopy of the plots, use saveplot or the menu
+in the graph to save the plot into a file. Then use xgraph to get the
+hardcopy.
+
+.SH "SOURCE CONTROL"
+.PP
+The
+.I musa
+environment works on the concept of levels.  When it is first started,
+.I musa
+is in level 0.  For each nested "source" (or macro) command, the level
+is increased by one.  At any particular level, several environment
+variables may be set via options to the "source" or "step" command.
+.PP
+Commands in a source file are normally executed without stopping, but
+the running of source files can be stopped by a number of causes.
+The execution of source files is halted by an interrupt (control C),
+a break generated by the "setbreak" command, or a hard error (such as
+a syntax error in the source file).
+.PP
+There are also two soft errors that may interrupt the running of a
+source file.  The first is a verify failure, generated by the "verify"
+command.  The other is a "not found" error, which occurs when an
+element is accessed but does not exist.
+.I Musa
+will stop on these errors based on the status of the `V' and `F' flags.
+The flags are set by preceding the option by a `+', and cleared by
+preceding the option by a `-'.  For example, to run a source file
+stopping on verify errors but not on "not found" errors, one would
+type:
+.RS
+source +V -F source_file
+.RE
+.PP
+If one wished to stop processing after every command of a source
+file.  The processing should be initiated as follows:
+.RS
+step source_file
+.RE
+Each following command could then be run by typing "step".
+.PP
+The `R' option of the "source" command
+resets the level of the source file.  This allows one
+to skip the remaining commands in a source file, and return to the
+"level 0" interactive mode of
+.I musa.
+
+.SH "OPTIMIZATION"
+.PP
+WARNING: these optimizations are known to have some
+bug which we are currently trying to trace down. The bug appears
+as irregular behavior of devices. These optimizations are
+turned on via the -M and -P options.
+.PP
+.I Musa
+performs two optimization steps to the transistor networks as they are
+read in to memory.  The first is to recognize pull-up and pull-down
+transistors.  A pull-up transistor is a transistor with either its
+source or its drain tied to Vdd.  Similarly a pull-down transistor has
+its source or drain tied to GND.  Recognizing this special case of
+transistor is important since it may be treated as
+a unidirectional device.  Regular transistors are bidirectional and
+are therefore slower to simulate.
+.PP
+The second optimization is the merging of transistors into
+series-parallel networks of transistors.  For example, three PMOS
+transistors in parallel may be modeled as one instance.  The
+``instinfo'' command gives a representation of the function of
+the transistor network.  A `*' denotes transistors in series, and
+a `+' denotes transistors in parallel.  For example:
+.br
+(* (+ 1 2) 3) would represent the following network:
+.nf
+.ta 5n 10n 15n
+
+	1		3
+-------------------------
+		|
+	2	|
+----------
+.fi
+
+.SH COMMENTS
+.PP
+When reading sim(5OCTTOOLS) format files,
+.I musa
+will ignore everything except the transistor declarations and node
+aliases.  The read-in time for a circuit
+may be decreased by removing extraneous resistor and capacitor
+declarations.
+.SH SEE ALSO
+sim(5OCTTOOLS), magic(1OCTTOOLS), rpc-musa(1OCTTOOLS)
+.SH AUTHOR
+Russell Segal
+.br
+Modifications by Andrea Casotto 
+.br
+X11 Version by Rodney Lai
+.SH BUGS
+.PP
+The savestate command will not save the internal state of instances.
+For this reason, it is impossible to save the state of a circuit
+containing master-slave latches.

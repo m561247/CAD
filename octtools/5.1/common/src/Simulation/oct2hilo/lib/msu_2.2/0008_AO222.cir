@@ -1,0 +1,19 @@
+CCT (rise,fall,mrise,mfall,oc1,ic1,ic2,ic3,ic4,ic5,ic6,ic7,ic8) ao2222(O,A1,B1,C2,D2,E3,F3,G4,H4) 
+
+capacitor(ic1) cap1(A1);
+capacitor(ic2) cap2(B1);
+capacitor(ic3) cap3(C2);
+capacitor(ic4) cap4(D2);
+capacitor(ic5) cap5(E3);
+capacitor(ic6) cap6(F3);
+capacitor(ic7) cap7(G4);
+capacitor(ic8) cap8(H4);
+capacitor(oc1) cap9(O);
+
+** WIRE DECLARATIONS
+
+INPUT   A1 B1 C2 D2 E3 F3 G4 H4;
+
+WIRE    (rise,fall,mrise,mfall,0) O = (A1 AND B1) OR (C2 AND D2) OR (E3 AND F3) OR (G4 AND H4);
+.
+

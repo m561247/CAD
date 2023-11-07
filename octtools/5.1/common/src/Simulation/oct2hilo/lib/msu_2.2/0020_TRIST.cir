@@ -1,0 +1,13 @@
+CCT  (rise,fall,mrise,mfall,oc1,ic1,ic2) tristatebuf(O,DATA,EN)
+
+capacitor(ic1) cap1(DATA);
+capacitor(ic2) cap2(EN);
+capacitor(oc1) cap3(O);
+
+BUFIF1 (rise,fall,mrise,mfall,0) G1(O,DATA,EN);           
+                                        
+** WIRE DECLARATIONS
+
+INPUT           DATA EN;
+TRI             O.
+

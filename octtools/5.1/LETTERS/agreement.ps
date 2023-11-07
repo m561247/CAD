@@ -1,0 +1,1445 @@
+%! 
+% The following defines procedures assumed and used by program "dvi2ps"
+%
+% $Header: tex.ps,v 1.13 87/12/14 00:57:00 van Exp $
+%
+% Original By:  Neal Holtz, Carleton University, Ottawa, Canada
+%		<holtz@cascade.carleton.cdn>
+%		<holtz%cascade.carleton.cdn@ubc.csnet>
+%		June, 1985
+% Seriously hacked by Van Jacobson, LBL
+%		<van@lbl-csam.arpa>
+
+/TeXDict 200 dict def   % define a working dictionary
+TeXDict begin           % start using it.
+                        % units are in "dots" (300/inch)
+/Resolution 300 def
+/Inch  {Resolution mul} def  % converts inches to internal units
+
+/Mtrx 6 array def
+
+%%%%%%%%%%%%%%%%%%%%% Page setup (user) options %%%%%%%%%%%%%%%%%%%%%%%%
+
+% dvi2ps will output coordinates in the TeX system ([0,0] 1" down and in
+% from top left, with y +ive downward).  The default PostScript system
+% is [0,0] at bottom left, y +ive up.  The Many Matrix Machinations in
+% the following code are an attempt to reconcile that. The intent is to
+% specify the scaling as 1 and have only translations in the matrix to
+% properly position the text.  Caution: the default device matrices are
+% *not* the same in all PostScript devices; that should not matter in most 
+% of the code below (except for lanscape mode -- in that, rotations of
+% -90 degrees resulted in the the rotation matrix [ e 1 ]
+%                                                 [ 1 e ]
+% where the "e"s were almost exactly but not quite unlike zeros.
+
+/@letter
+  { % letter
+    initmatrix
+    72 Resolution div dup neg scale          % set scaling to 1.
+    310 -3005 translate      % move origin to top (these are not exactly 1"
+    Mtrx currentmatrix pop   % and -10" because margins aren't set exactly right)
+    /@TeXSave save def
+  } def
+        % note mode is like letter, except it uses less VM
+/@note
+  { % note
+    initmatrix
+    72 Resolution div dup neg scale          % set scaling to 1.
+    310 -3005 translate                      % move origin to top
+    Mtrx currentmatrix pop
+    /@TeXSave save def
+  } def
+
+/@landscape
+  { % letter
+    initmatrix
+    72 Resolution div dup neg scale          % set scaling to 1.
+    Mtrx currentmatrix 0 0.0 put
+    Mtrx 1 -1.0 put
+    Mtrx 2 1.0 put
+    Mtrx 3 0.0 put
+    Mtrx  setmatrix
+    300 310 translate                       % move origin to top
+    Mtrx currentmatrix pop
+    /@TeXSave save def
+  } def
+
+/@legal
+  { % legal
+    initmatrix
+    72 Resolution div dup neg scale          % set scaling to 1.
+    295 -3880 translate                      % move origin to top
+    Mtrx currentmatrix pop
+    /@TeXSave save def
+  } def
+
+/@manualfeed
+   { statusdict /manualfeed true put
+   } def
+
+% n @copies -   set number of copies
+/@copies
+   { /#copies exch def
+   } def
+
+%%%%%%%%%%%%%%%%%%%% Procedure Defintions %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% id @newfont -		initialize a new font dictionary
+/@newfont
+  { /newname exch def
+    newname 7 dict def          % allocate new font dictionary
+    newname load begin
+        /FontType 3 def
+        /FontMatrix [1 0 0 -1 0 0] def
+        /FontBBox [0 0 1 1] def
+        /BitMaps 128 array def
+        /BuildChar {CharBuilder} def
+        /Encoding 128 array def
+        0 1 127 {Encoding exch /.undef put} for
+        end
+    newname newname load definefont pop
+  } def
+
+
+% the following is the only character builder we need.  it looks up the
+% char data in the BitMaps array, and paints the character if possible.
+% char data  -- a bitmap descriptor -- is an array of length 6, of 
+%          which the various slots are:
+
+/ch-image {ch-data 0 get} def   % the hex string image
+/ch-width {ch-data 1 get} def   % the number of pixels across
+/ch-height {ch-data 2 get} def  % the number of pixels tall
+/ch-xoff  {ch-data 3 get} def   % number of pixels below origin
+/ch-yoff  {ch-data 4 get} def   % number of pixels to left of origin
+/ch-tfmw  {ch-data 5 get} def   % spacing to next character
+
+% fontdict ch Charbuilder -     -- image one character
+/CharBuilder
+  { /ch-code exch def           % save the char code
+    /font-dict exch def         % and the font dict.
+    /ch-data font-dict /BitMaps get ch-code get def   % get the bitmap
+    ch-data null eq not {
+	ch-tfmw 0 ch-xoff neg ch-yoff neg
+	ch-width ch-xoff sub ch-height ch-yoff sub
+	setcachedevice
+        ch-width ch-height true [1 0  0 1  ch-xoff ch-yoff]
+	{ch-image} imagemask
+    } if
+} def
+
+
+% fontdict @sf -        -- make that the current font
+/@sf { setfont } def
+
+% in the following, the font-cacheing mechanism requires that
+% a name unique in the particular font be generated
+
+% char-data ch @dc -    -- define a new character bitmap in current font
+/@dc
+  { /ch-code exch def
+    dup 0 get
+    length 2 lt
+      { pop [ <00> 1 1 0 0 8.00 ] } % replace <> with null
+    if
+    /ch-data exch def
+    currentfont /BitMaps get ch-code ch-data put
+    % generate a unique name simply from the character code
+    currentfont /Encoding get ch-code dup (   ) cvs cvn put
+  } def
+
+/@DRAFTF { gsave initmatrix newpath
+       /Helvetica-Bold findfont setfont
+       (Draft) dup stringwidth pop 8.875 exch div dup 72 mul dup scale
+       52.3 rotate 2.5 exch div -.35 translate
+       0.95 setgray
+       0 0 moveto show
+       grestore } def
+/@DRAFTM { gsave initmatrix newpath
+       /Helvetica-Bold findfont 72 scalefont setfont
+       0.95 setgray
+       576 702 moveto
+       (Draft) stringwidth exch neg exch neg rmoveto
+       (Draft) show
+       grestore } def
+
+% n @bop0 -              -- begin the char def section of a new page
+/@bop0 { pop } def
+
+% n @bop1 -              -- begin a brand new page
+/@bop1 { pop Mtrx setmatrix /SaveImage save def } def
+
+/@draft {
+    /@bop1
+	  { 1 le {@DRAFTF} {@DRAFTM} ifelse
+	    Mtrx setmatrix
+	    /SaveImage save def
+	  } def
+} def
+
+% - @eop -              -- end a page
+/@eop { showpage SaveImage restore } def
+
+% - @start -            -- start everything
+/@start { @letter /@TeXSave save def } def
+
+% - @end -              -- done the whole shebang
+/@end { end } def
+
+% x y p -               -- move to position
+/p { moveto } bind def
+
+% x r -                 -- move right
+/r { 0 rmoveto } bind def
+
+% string s -            -- show the string
+/s { show } bind def
+
+% x string m -            -- move right then show string
+/m { exch 0 rmoveto show } bind def
+
+% ch c -                -- show the character (code given)
+/c { c-string dup 0 4 -1 roll put show } bind def
+
+/c-string ( ) def
+
+% dx dy ru -   -- set a rule (rectangle)
+/ru
+  { /dy exch neg def    % because dy is height up from bottom
+    /dx exch def
+    /x currentpoint /y exch def def   % remember current point
+    newpath x y moveto
+    dx 0 rlineto
+    0 dy rlineto
+    dx neg 0 rlineto
+    closepath fill
+    x y moveto
+  } bind def
+
+/@MacSetUp
+  { userdict /md known  % if md is defined
+      { userdict /md get type /dicttype eq      % and if it is a dictionary
+	{
+	md begin                             % then redefine some stuff
+	/letter {} def
+	/note {} def
+	/legal {} def
+	/od{txpose
+	    1 0 mtx defaultmatrix dtransform exch atan/pa exch def
+	    newpath clippath mark
+	    {transform{itransform moveto}}
+	    {transform{itransform lineto}}
+	    { 6 -2 roll transform
+	      6 -2 roll transform
+	      6 -2 roll transform
+	      { itransform 6 2 roll
+		itransform 6 2 roll
+		itransform 6 2 roll
+		curveto
+	      }
+	    }
+	    {{closepath}}
+	    pathforall newpath counttomark array astore /gc xdf
+	    pop ct 39 0 put
+	    10 fz 0 fs 2 F/|______Courier fnt invertflag{PaintBlack}if
+	}def
+	/txpose{
+	    pxs pys scale ppr aload pop
+	    por {
+		noflips {
+		    pop exch neg exch translate pop 1 -1 scale
+		}if
+		xflip yflip and {
+		    pop exch neg exch translate 180 rotate 1 -1 scale
+		    ppr 3 get ppr 1 get neg sub neg ppr 2 get
+		    ppr 0 get neg sub neg translate
+		}if 
+		xflip yflip not and {
+		    pop exch neg exch translate pop 180 rotate
+		    ppr 3 get ppr 1 get neg sub neg 0 translate
+		}if
+		yflip xflip not and {
+		    ppr 1 get neg ppr 0 get neg translate
+		}if
+	    }
+	    {
+		noflips {
+		    translate pop pop 270 rotate 1 -1 scale
+		}if
+		xflip yflip and {
+		    translate pop pop 90 rotate 1 -1 scale
+		    ppr 3 get ppr 1 get neg sub neg ppr 2 get
+		    ppr 0 get neg sub neg translate
+		}if
+		xflip yflip not and {
+		    translate pop pop 90 rotate ppr 3 get
+		    ppr 1 get neg sub neg 0 translate
+		}if
+		yflip xflip not and {
+		    translate pop pop 270 rotate ppr 2 get
+		    ppr 0 get neg sub neg 0 exch translate
+		}if
+	    }ifelse
+	    scaleby96 {
+		ppr aload pop 4 -1 roll add 2 div 3 1 roll add 2 div 2 copy
+		translate .96 dup scale neg exch neg exch translate
+	    }if
+	}def
+	/cp {pop pop showpage pm restore}def
+        end
+      }if
+    } if    
+  } def
+
+
+%!
+% All software, documentation, and related files in this distribution of
+% psfig/tex are Copyright (c) 1987 Trevor J. Darrell
+%
+% Permission is granted for use and non-profit distribution of psfig/tex 
+% providing that this notice be clearly maintained, but the right to
+% distribute any portion of psfig/tex for profit or as part of any commercial
+% product is specifically reserved for the author.
+%
+%
+% psfigTeX PostScript Prolog
+% $Header: tex.ps,v 1.13 87/12/14 00:57:00 van Exp $
+%
+/psf$TeXscale { 65536 div } def
+
+/DocumentInitState [ matrix currentmatrix currentlinewidth currentlinecap
+currentlinejoin currentdash currentgray currentmiterlimit ] cvx def
+
+%  x y bb-llx bb-lly bb-urx bb-ury startFig -
+/startTexFig {
+	/psf$SavedState save def
+	userdict maxlength dict begin
+	currentpoint transform
+
+	DocumentInitState setmiterlimit setgray setdash setlinejoin setlinecap
+		setlinewidth setmatrix
+
+	itransform moveto
+
+	/psf$ury exch psf$TeXscale def
+	/psf$urx exch psf$TeXscale def
+	/psf$lly exch psf$TeXscale def
+	/psf$llx exch psf$TeXscale def
+	/psf$y exch psf$TeXscale def
+	/psf$x exch psf$TeXscale def
+	
+	currentpoint /psf$cy exch def /psf$cx exch def
+
+	/psf$sx psf$x psf$urx psf$llx sub div def 	% scaling for x
+	/psf$sy psf$y psf$ury psf$lly sub div def	% scaling for y
+
+	psf$sx psf$sy scale			% scale by (sx,sy)
+
+	psf$cx psf$sx div psf$llx sub
+	psf$cy psf$sy div psf$ury sub translate
+	
+	/DefFigCTM matrix currentmatrix def
+
+	/initmatrix {
+		DefFigCTM setmatrix
+	} def
+	/defaultmatrix {
+		DefFigCTM exch copy
+	} def
+
+	/initgraphics {
+		DocumentInitState setmiterlimit setgray setdash 
+			setlinejoin setlinecap setlinewidth setmatrix
+		DefFigCTM setmatrix
+	} def
+
+	/showpage {
+		initgraphics
+	} def
+	@MacSetUp
+} def
+
+% llx lly urx ury doclip -	(args in figure coordinates)
+/doclip {
+	currentpoint 6 2 roll
+	newpath 4 copy
+	4 2 roll moveto
+	6 -1 roll exch lineto
+	exch lineto
+	exch lineto
+	closepath clip
+	newpath
+	moveto
+} def
+
+% - endTexFig -
+/endTexFig { end psf$SavedState restore } def
+
+
+%%%% Additions by LA Carr to reencode Adobe fonts as TeX fonts (almost)
+%%%% Based on routine in LaserWriter Cookbook
+/ReEncodeForTeX
+  { /newfontname exch def
+    /basefontname exch def
+    /TeXstr 30 string def
+
+    /basefontdict basefontname findfont def
+    /newfont basefontdict maxlength dict def
+    basefontdict
+      { exch dup /FID ne
+	  { dup /Encoding eq
+	    { exch dup length array copy
+	        newfont 3 1 roll put }
+	    { exch newfont 3 1 roll put }
+	    ifelse
+	  }
+	{ pop pop }
+	ifelse
+      } forall
+
+      basefontdict /MathFontName known not
+        { 
+	  /TeXvec basefontname TeXstr cvs (Courier) search
+	    { pop pop pop TeXcourvec }
+	    { pop TeXnormalvec }
+	  ifelse def
+          TeXvec aload pop
+
+          TeXvec length 2 idiv
+	    { newfont /Encoding get 3 1 roll put }
+	  repeat
+	}
+      if
+
+      newfontname newfont definefont pop
+  } def
+
+/TeXnormalvec
+	[ 8#014 /fi 8#015 /fl 8#020 /dotlessi 8#022 /grave 8#023 /acute
+	  8#024 /caron 8#025 /breve 8#026 /macron 8#027 /ring 8#030 /cedilla
+	  8#031 /germandbls 8#032 /ae 8#033 /oe 8#034 /oslash 8#035 /AE
+	  8#036 /OE 8#037 /Oslash 8#042 /quotedblright 8#074 /exclamdown
+	  8#076 /questiondown 8#134 /quotedblleft 8#136 /circumflex
+	  8#137 /dotaccent 8#173 /endash 8#174 /emdash 8#175 /hungarumlat
+	  8#176 /tilde 8#177 /dieresis ] def
+/TeXcourvec
+	[ 8#016 /exclamdown 8#017 /questiondown 8#020 /dotlessi 8#022 /grave
+	  8#023 /acute 8#024 /caron 8#025 /breve 8#026 /macron 8#027 /ring
+	  8#030 /cedilla 8#031 /germandbls 8#032 /ae 8#033 /oe 8#034 /oslash
+	  8#035 /AE 8#036 /OE 8#037 /Oslash 8#074 /less 8#076 /greater
+	  8#134 /backslash 8#136 /circumflex 8#137 /underscore 8#173 /braceleft
+	  8#174 /bar 8#175 /braceright 8#177 /dieresis ] def
+
+/TeXPSmakefont {	% defines a routine for generating PS fonts, fudged!
+	/TeXsize exch def findfont 
+	[ TeXsize 0 0 TeXsize neg 0 0 ] makefont
+} def
+
+% fontname basefontname angle ObliqueFont -
+% Create a General Oblique font
+/ObliqueFont {
+    /ObliqueAngle exch def
+    /ObliqueBaseName exch def
+    /ObliqueFontName exch def
+    /ObliqueTransform [1 0 ObliqueAngle sin ObliqueAngle cos div 1 0 0] def
+    /basefontdict ObliqueBaseName findfont ObliqueTransform makefont def
+    /newfont basefontdict maxlength dict def
+    basefontdict
+      { exch dup /FID ne
+	  { dup /Encoding eq
+	    { exch dup length array copy
+	        newfont 3 1 roll put }
+	    { exch newfont 3 1 roll put }
+	    ifelse
+	  }
+	{ pop pop }
+	ifelse
+      } forall
+
+     newfont /FontName ObliqueFontName put
+     ObliqueFontName newfont definefont
+     pop
+} def
+
+% Palatino-ItalicUnslanted? You must be joking!
+
+% fontname basename SmallCapsFont -	Create a General SmallCaps font
+/SmallCapsFont {
+    /SmallCapsBaseName exch def
+    /SmallCapsFontName exch def
+    /basefontdict SmallCapsBaseName findfont def
+    /newfont basefontdict maxlength 10 add dict def
+
+    newfont begin
+	/FontName SmallCapsFontName def
+	/FontBaseDict basefontdict 1000 scalefont def
+	/FontSCDict FontBaseDict .8 scalefont def
+	/FontType 3 def
+	/BuildChar {SmallCapChar} def
+	/FontMatrix dup basefontdict exch get def
+	/FontBBox dup basefontdict exch get def
+	/Encoding dup basefontdict exch get def
+    end
+    SmallCapsFontName newfont definefont pop
+} def
+
+% fontdict ch SmallCapChar -
+% It shouldn't be so damn hard to do this (make one font out
+% of two others) but I tried several dozen variations on this
+% theme until I found something that worked. -- vj
+/SmallCapChar {
+    /achar (A) def
+    achar exch 0 exch put
+    begin
+    achar 0 get dup 97 ge exch 122 le and {
+	% handle 'a' through 'z' specially
+	achar 0 achar 0 get 32 sub put
+	FontSCDict
+    } {
+	FontBaseDict
+    } ifelse
+    setfont achar stringwidth FontBBox setcachedevice
+    newpath 0 0 moveto achar show
+    end
+} def
+
+/MathEncodingVec [
+/Gamma /Delta /Theta /Lambda /Xi /Pi /Sigma /Upsilon1
+/Phi /Psi /Omega /alpha /beta /gamma /delta /epsilon
+/zeta /nu /theta /iota /kappa /lambda /mu /nu
+/xi /pi /rho /sigma /tau /upsilon /phi /chi
+/psi /omega /epsilon /theta1 /omega1 /rho /sigma /phi1
+/arrowleft /arrowleft /arrowright /arrowright
+/suchthat /congruent /proportional /angle
+/zero /one /two /three /four /five /six /seven
+/eight /nine /period /comma /less /slash /greater /asteriskmath
+/partialdiff /A /B /C /D /E /F /G
+/H /I /J /K /L /M /N /O
+/P /Q /R /S /T /U /V /W
+/X /Y /Z /registerserif /copyrightserif /trademarkserif /logicalor /logicaland
+/section /a /b /c /d /e /f /g
+/h /i /j /k /l /m /n /o
+/p /q /r /s /t /u /v /w
+/x /y /z /dotlessi /j /weierstrass /macron /breve
+] def
+
+% the following gives the character codes of the above characters
+% in their font.  I.e., this is the character we have to hand "show"
+% to image the characters above.
+/MathCharVec [
+	71	68	81	76	88	80	83	161
+	70	89	87	97	98	103	100	101
+	122	110	113	105	107	108	109	110
+	120	112	114	115	116	117	102	99
+	121	119	101	74	118	114	115	106
+	172	172	174	174	39	64	181	208
+	48	49	50	51	52	53	54	55
+	56	57	46	44	60	47	62	42
+	182	65	66	67	68	69	70	71
+	72	73	74	75	76	77	78	79
+	80	81	82	83	84	85	86	87
+	88	89	90	210	211	212	218	217
+	167	97	98	99	100	101	102	103
+	104	105	106	107	108	109	110	111
+	112	113	114	115	116	117	118	119
+	120	121	122	245	106	195	197	198
+] def
+
+% this array tells which font dictionary holds each character above
+% (0 = basefont, 1 = symbol (maybe slanted), 2 = symbol (unslanted)).
+/MathDictVec [
+	1 1 1 1 1 1 1 1
+	1 1 1 1 1 1 1 1
+	1 1 1 1 1 1 1 1
+	1 1 1 1 1 1 1 1
+	1 1 1 1 1 1 1 1
+	2 2 2 2 2 2 2 2
+	0 0 0 0 0 0 0 0
+	0 0 0 0 2 2 2 2
+	2 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 2 2 2 2 2
+	2 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 2 0 0
+] def
+
+
+% fontname basename symbolname symbolbase angle MathOblique -
+% Create a "math" font with the symbol font characters slanted
+% by "angle"
+/MathOblique {
+    3 copy ObliqueFont
+    pop pop MathFont
+} def
+    
+
+% fontname basename symbolname MathFont -	Create a math italic font
+%
+% We build this font out of the base font & the symbol font
+% using an encoding vec as close as we can get to cmmi10 with
+% standard postscript characters.  An array parallel to the
+% encoding vector tells which font dictionary to use for a
+% particular character.
+/MathFont {
+    /MathSymName exch def
+    /MathBaseName exch def
+    /MathFontName exch def
+    /basefontdict MathBaseName findfont def
+    /newfont basefontdict maxlength 10 add dict def
+
+    newfont begin
+	/FontName MathFontName def
+	/FontDictArray [
+	    basefontdict 1000 scalefont
+	    MathSymName findfont 950 scalefont
+	    /Symbol findfont 950 scalefont
+	   ] def
+	/FontType 3 def
+	/BuildChar {MathFontChar} def
+	/FontMatrix dup basefontdict exch get def
+	/FontBBox dup basefontdict exch get def
+	% the encoding vector is a copy of the original font's
+	% encoding, modified "appropriately".
+	/Encoding dup basefontdict exch get dup length array copy def
+	/WhichFont MathDictVec def
+	/WhichChar MathCharVec def
+	MathEncodingVec Encoding copy pop
+	/achar (A) def
+    end
+    MathFontName newfont definefont pop
+} def
+
+% fontdict ch MathFontChar -
+% (there's some serious magic going on here:  see note on 
+% SmallCapChar above -- vj).
+/MathFontChar {
+    exch begin
+    achar exch 0 exch put
+    FontDictArray WhichFont achar 0 get get get setfont
+    achar dup 0 get WhichChar exch get 0 exch put
+    achar stringwidth FontBBox setcachedevice
+    newpath 0 0 moveto achar show
+    end
+} bind def
+
+/@flushfonts { @TeXSave restore /@TeXSave save def} def
+
+end                     % revert to previous dictionary
+TeXDict begin @start
+%%Title: agreement.dvi
+%%Creator: dvi2ps
+%%EndProlog
+2 @bop0
+/Times-Roman /t-rom.300 ReEncodeForTeX /t-rom.300 /t-rom.300 41.666629 TeXPSmakefont def
+2 @bop1
+t-rom.300 @sf 262 307 p (rectly)s
+10(by)m
+10(writing)m
+8(to)m
+10(the)m
+10(Industrial)m
+9(Liaison)m
+10(Program)m
+11(Software)m
+10(Distribution)m
+8(Coordinator)m
+-2 r 46 c
+324 357 p (The)s
+10(software)m
+10(and)m
+10(documentation)m
+9(provided)m
+8(under)m
+10(this)m
+8(agreement)m
+11(may)m
+11(be)m
+9(forwarded)m
+262 407 p (to)s
+8(your)m
+8(or)m
+(ganization')s
+-2 r 115 c
+7(of)m
+(\014ces)s
+9(outside)m
+8(the)m
+9(United)m
+8(States)m
+10(provided)m
+7(that)m
+9(you)m
+8(sign)m
+8(the)m
+9(letter)m
+262 457 p (of)s
+11(assurance,)m
+14(return)m
+11(said)m
+11(letter)m
+12(to)m
+10(the)m
+12(Industrial)m
+10(Liaison)m
+12(Program,)m
+12(and)m
+12(comply)m
+11(with)m
+11(all)m
+262 506 p (applicable)s
+10(United)m
+10(States)m
+11(laws)m
+11(and)m
+10(regulations)m
+10(regarding)m
+10(the)m
+10(export)m
+10(of)m
+10(technology)m
+-2 r 46 c
+324 556 p (The)s
+16(Industrial)m
+14(Liaison)m
+16(Program)m
+16(does)m
+16(not)m
+15(distribute)m
+14(software)m
+16(to)m
+15(or)m
+(ganizations)s
+14(or)m
+262 606 p (individu)s
+-1(als)m
+9(outside)m
+10(the)m
+11(United)m
+10(States)m
+11(but)m
+10(does)m
+11(distribute)m
+9(documentation,)m
+11(provided)m
+10(that)m
+262 656 p (you)s
+8(sign)m
+8(the)m
+8(letter)m
+9(of)m
+8(assurance,)m
+11(return)m
+9(said)m
+8(letter)m
+9(to)m
+8(the)m
+8(Industrial)m
+8(Liaison)m
+9(Program,)m
+9(and)m
+262 706 p (comply)s
+11(with)m
+10(all)m
+11(applicable)m
+11(United)m
+11(States)m
+11(laws)m
+12(and)m
+11(regulations)m
+10(regarding)m
+11(the)m
+11(export)m
+11(of)m
+262 755 p (technology)s
+-2 r 46 c
+349 959 p (SIGNA)s
+-4(TURE:)m
+133 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+349 1109 p (NAME:)s
+242 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+349 1258 p (TITLE:)s
+250 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+349 1407 p (ORGANIZA)s
+-4(TION:)m
+52 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+349 1557 p (DA)s
+-4(TE:)m
+258 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+15 r 13 2 ru
+967 2574 p 50 c
+@eop
+1 @bop0
+/Times-Bold /t-bol.600 ReEncodeForTeX /t-bol.600 /t-bol.600 83.333257 TeXPSmakefont def
+/Times-Bold /t-bol.360 ReEncodeForTeX /t-bol.360 /t-bol.360 49.999929 TeXPSmakefont def
+/Times-Bold /t-bol.300 ReEncodeForTeX /t-bol.300 /t-bol.300 41.666629 TeXPSmakefont def
+1 @bop1
+t-bol.600 @sf 262 365 p (AGREEMENT)s
+t-bol.360 @sf 262 423 p (RESEARCH)s
+13(SOFTW)m
+-5(ARE)m
+262 482 p (Distributed)s
+9(by)m
+11(the)m
+10(Industrial)m
+10(Liaison)m
+11(Pr)m
+(ogram,)s
+10(Department)m
+10(of)m
+10(Elec-)m
+262 540 p (trical)s
+18(Engineering)m
+19(and)m
+18(Computer)m
+19(Sciences)m
+19 r 47 c
+19(Electr)m
+(onics)s
+18(Resear)m
+(ch)s
+262 598 p (Laboratory)s
+262 656 p (University)s
+12(of)m
+12(California)m
+12(at)m
+12(Berkeley)m
+262 800 p (This)s
+13(form)m
+12(must)m
+12(be)m
+12(signed)m
+13(on)m
+12(the)m
+12 r 114 c
+(everse)s
+13(side)m
+13(and)m
+12 r 114 c
+(eturned)s
+12(to:)m
+262 946 p (Cindy)s
+12(Manly-Fields)m
+262 996 p (Industrial)s
+12(Liaison)m
+13(Pr)m
+(ogram)s
+11(Of\014ce)m
+262 1046 p (479)s
+12(Cory)m
+13(Hall)m
+262 1095 p (University)s
+12(of)m
+12(California)m
+262 1145 p (Berkeley)s
+-2 r 44 c
+13(CA)m
+12(94720)m
+262 1195 p (USA)s
+t-rom.300 @sf 324 1301 p (This)s
+14(form)m
+14(speci\014es)m
+16(the)m
+14(terms)m
+14(under)m
+14(which)m
+14(the)m
+14(software)m
+15(and)m
+14(documentation)m
+14(con-)m
+262 1351 p (tained)s
+10(in)m
+10(the)m
+t-bol.300 @sf 10(Oct)m
+11 r 84 c
+-3(ools)m
+9(Distribution)m
+t-rom.300 @sf 10(are)m
+11(provided.)m
+324 1400 p (The)s
+10(software)m
+11(is)m
+9(distributed)m
+8(as)m
+11(is,)m
+10(completely)m
+10(without)m
+8(warranty)m
+10(and)m
+10(service)m
+11(support.)m
+262 1450 p (The)s
+15(University)m
+13(of)m
+15(California)m
+13(and)m
+15(its)m
+14(employees)m
+16(shall)m
+14(not)m
+14(be)m
+14(liable)m
+15(for)m
+14(the)m
+14(condition)m
+262 1500 p (or)s
+10(performance)m
+13(of)m
+11(the)m
+11(software.)m
+17(The)m
+12(software)m
+12(and)m
+11(documentation)m
+11(provided)m
+10(under)m
+11(this)m
+262 1550 p (agreement)s
+11(are)m
+12(for)m
+10(internal)m
+9(use)m
+11(only)m
+10(within)m
+9(your)m
+10(or)m
+(ganization.)s
+324 1600 p (The)s
+16(University)m
+14(does)m
+15(not)m
+15(warrant)m
+15(that)m
+15(it)m
+15(owns)m
+15(the)m
+15(copyright)m
+14(or)m
+15(other)m
+14(proprietary)m
+262 1649 p (rights)s
+8(to)m
+9(all)m
+9(software)m
+10(and)m
+10(documentation)m
+9(provided)m
+9(under)m
+9(this)m
+9(agreement,)m
+11(notwithstand-)m
+262 1699 p (ing)s
+11(any)m
+12(copyright)m
+11(notice,)m
+13(and)m
+12(shall)m
+12(not)m
+11(be)m
+12(liable)m
+12(for)m
+12(any)m
+12(infringement)m
+11(of)m
+12(copyright)m
+11(or)m
+262 1749 p (other)s
+13(proprietary)m
+12(rights)m
+13(brought)m
+12(by)m
+13(third)m
+12(parties)m
+13(against)m
+14(the)m
+13(recipient)m
+14(of)m
+13(the)m
+13(software)m
+262 1799 p (and)s
+10(documentation)m
+10(provided)m
+10(under)m
+10(this)m
+10(agreement.)m
+324 1849 p (THE)s
+9(UNIVERSITY)m
+10(HEREBY)m
+10(DISCLAIMS)m
+9(ALL)m
+9(IMPLIED)m
+10 r 87 c
+-4(ARRANTIES,)m
+10(IN-)m
+262 1899 p (CLUDING)s
+16(THE)m
+16(IMPLIED)m
+17 r 87 c
+-4(ARRANTIES)m
+16(OF)m
+16(MERCHANT)m
+-2(ABILITY)m
+15(AND)m
+16(FIT-)m
+262 1948 p (NESS)s
+12(FOR)m
+11 r 65 c
+11 r 80 c
+-3(AR)m
+-2(TICULAR)m
+11(PURPOSE.)m
+13(THE)m
+12(UNIVERSITY)m
+12(SHALL)m
+13(NOT)m
+12(BE)m
+11(LI-)m
+262 1998 p (ABLE)s
+12(FOR)m
+11(ANY)m
+11(DAMAGES)m
+13(INCURRED)m
+11(BY)m
+11(THE)m
+13(RECIPIENT)m
+12(IN)m
+11(USE)m
+12(OF)m
+12(THE)m
+262 2048 p (SOFTW)s
+-4(ARE)m
+13(AND)m
+13(DOCUMENT)m
+-2 r 65 c
+-4(TION,)m
+13(INCLUDING)m
+14(DIRECT)m
+-2 r 44 c
+12(INDIRECT)m
+-2 r 44 c
+13(SPE-)m
+262 2098 p (CIAL,)s
+11(INCIDENT)m
+-2(AL,)m
+10(OR)m
+11(CONSEQUENTIAL)m
+12(DAMAGES.)m
+324 2148 p 84 c
+-2 r 111 c
+13(facilitate)m
+14(the)m
+14(use)m
+15(of)m
+14(the)m
+14(programs)m
+15(within)m
+12(your)m
+14(or)m
+(ganization)s
+12(within)m
+13(the)m
+14(United)m
+262 2197 p (States,)s
+14(unless)m
+13(otherwise)m
+12(stated,)m
+14(your)m
+13(or)m
+(ganization)s
+11(may)m
+13(make)m
+14(an)m
+13(unlimited)m
+12(number)m
+13(of)m
+262 2247 p (copies)s
+11(of)m
+11(documentation)m
+11(and)m
+12(code)m
+11(for)m
+11(internal)m
+11(use)m
+12(within)m
+9(your)m
+11(or)m
+(ganization,)s
+10(provided)m
+262 2297 p (that)s
+9(the)m
+9(copies)m
+10(bear)m
+10(the)m
+10(copyright)m
+8(notice)m
+10(appearing)m
+9(on)m
+10(the)m
+9(documentation)m
+9(and)m
+10(code)m
+10(and)m
+262 2347 p (are)s
+11(clearly)m
+11(marked)m
+11(as)m
+11(being)m
+10(for)m
+10(internal)m
+10(use)m
+11(only)m
+-2 r 46 c
+324 2397 p (The)s
+10(recipient')m
+-1 r 115 c
+7(right)m
+8(to)m
+9(redistribute)m
+7 r 97 c
+10(program)m
+9(is)m
+9(subject)m
+9(to)m
+9 r 97 c
+9(separate)m
+11(license)m
+10(agree-)m
+262 2446 p (ment.)s
+18(Should)m
+11(you)m
+11(wish)m
+12(to)m
+11(redistribute)m
+10(the)m
+12(code,)m
+13(contact)m
+12(the)m
+12(developer)m
+12(of)m
+11(the)m
+12(code)m
+12(di-)m
+967 2574 p 49 c
+@eop
+@end

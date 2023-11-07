@@ -1,0 +1,45 @@
+MODEL yellowseg:physical;
+
+TECHNOLOGY scmos;
+VIEWTYPE PHYSICAL;
+EDITSTYLE PHYSICAL;
+
+INPUT COMMON;
+INPUT DP;
+INPUT A;
+INPUT B;
+INPUT C;
+INPUT D;
+INPUT E;
+INPUT F;
+INPUT G;
+
+ENDMODEL;
+
+(FACET yellowseg:physical
+	(LAYER MET1
+		(BOX -180 -210 -120 -150 a_box)
+		(BOX -180 -90 -120 -30 b_box)
+		(BOX -180 30 -120 90 c_box)
+		(BOX -180 150 -120 210 d_box)
+		(BOX 120 -210 180 -150 e_box)
+		(BOX 120 -90 180 -30 f_box)
+		(BOX 120 30 180 90 g_box)
+		(BOX 120 150 180 210 dp_box)
+		(BOX -30 -210 30 -150 common_box)
+	)
+	(FTERM COMMON (ALIAS common_box))
+	(FTERM A (ALIAS a_box))
+	(FTERM B (ALIAS b_box))
+	(FTERM C (ALIAS c_box))
+	(FTERM D (ALIAS d_box))
+	(FTERM E (ALIAS e_box))
+	(FTERM F (ALIAS f_box))
+	(FTERM G (ALIAS g_box))
+	(FTERM DP (ALIAS dp_box))
+)
+(FACET yellowseg:physical:interface
+	(SPROP CELLTYPE "I/O")
+	(SPROP "I/O-MODEL" "SEG")
+	(SPROP "SEG_COLOR" "YELLOW")
+)

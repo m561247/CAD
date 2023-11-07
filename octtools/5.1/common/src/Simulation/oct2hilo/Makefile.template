@@ -1,0 +1,28 @@
+NAME: oct2hilo
+DESCRIPTION: Oct to HILO netlist or VHDL netlist
+TYPE: T
+PACKAGES: oct st mm port vov
+MISC: Makefile Makefile.template 4bitadder.cct_ref 4bitadder lib tutorials
+SOURCES: get_name.c load_table.c main.c makeGmuInst.c make_inst.c outGmuInst.c out_hilo.c out_vhdl.c read_terms.c util.c 
+HEADERS: head.h
+OBJECTS: get_name.o load_table.o main.o makeGmuInst.o make_inst.o outGmuInst.o out_hilo.o out_vhdl.o read_terms.o util.o 
+INSTALL: ${OCTTOOLS}/lib/oct2hilo
+VERBATIMSTART
+test::
+	@${CADBIN}/${TARGET} 4bitadder:flat
+	cmp -s 4bitadder.cct 4bitadder.cct_ref
+
+${OCTTOOLS}/lib/oct2hilo:lib
+	rm -rf $@
+	-mkdir $@
+	${CP} -r $?/* $@
+
+
+clean::
+	rm -rf 4bitadder.cct
+
+VERBATIMEND
+TESTNAME: $(NAME)-test
+TESTSOURCES: 
+TESTOBJECTS: 
+SYSLIBS: -lm

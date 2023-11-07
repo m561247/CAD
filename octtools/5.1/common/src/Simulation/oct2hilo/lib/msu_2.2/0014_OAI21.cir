@@ -1,0 +1,14 @@
+CCT (rise,fall,mrise,mfall,oc1,ic1,ic2,ic3) oai21(O,A1,B2,C2) 
+
+capacitor(ic1) cap1(A1);
+capacitor(ic2) cap2(B2);
+capacitor(ic3) cap3(C2);
+capacitor(oc1) cap4(O);
+
+** WIRE DECLARATIONS
+
+INPUT   A1 B2 C2;
+
+WIRE    (rise,fall,mrise,mfall,0) O = (B2 OR C2) NAND A1;
+.
+

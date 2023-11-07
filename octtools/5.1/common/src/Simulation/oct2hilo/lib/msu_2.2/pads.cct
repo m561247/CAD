@@ -1,0 +1,79 @@
+
+********************************************************************************
+**  these are models for the I/O buffers which connect the core to the I/O    **
+** pads.  There are 3 basic configurations:  V4out - output pad,	      **
+** 					     V4in  - input pad,		      **
+**					     V4io  - bidirectional pad	      **
+**  V4outm, V4inm and V4iom which are the mirrored versions are also given.   **
+********************************************************************************
+
+
+** Revision 0.0
+** 4/30/90
+** Written by Ralph Pepe
+
+CCT 	V4out(pad, out,gnd_ring,vdd_ring)
+
+BUFIF0	G1(pad, out, enable);
+
+INPUT 	out,gnd_ring,vdd_ring;
+TRI	pad;
+SUPPLY0 enable;
+.
+
+********************************************************************************
+
+CCT	V4outm(pad, out,gnd_ring,vdd_ring)
+
+V4out	G1(pad, out);
+
+INPUT 	out,gnd_ring,vdd_ring;
+TRI	pad;
+.
+
+********************************************************************************
+
+CCT	V4in(in, inb, pad, in_unb, vdd_ring, gnd_ring)
+
+NOT	G1(inb, pad)
+	G2(in, inb);
+
+INPUT	pad, in_unb, vdd_ring, gnd_ring;
+WIRE	in inb;
+.
+
+********************************************************************************
+
+CCT 	V4inm(in, inb, pad, in_unb, vdd_ring, gnd_ring)
+
+V4in	G1(in, inb, pad);
+
+INPUT	pad, in_unb, vdd_ring, gnd_ring;
+WIRE	in inb;
+.
+
+********************************************************************************
+
+CCT	V4io(pad, in, out, enable, )
+
+NOT	G1(in, inb)
+	G2(inb, pad);
+BUFIF0  G3(pad, out, enable);
+
+INPUT 	out enable;
+WIRE	in inb;
+TRI	pad;
+.
+
+********************************************************************************
+
+CCT	V4iom(pad, in, out, enable)
+
+V4io	G1(pad, in, out, enable);
+
+INPUT 	out enable;
+WIRE	in;
+TRI	pad;
+.
+
+

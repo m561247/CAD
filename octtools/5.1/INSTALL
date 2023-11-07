@@ -1,0 +1,306 @@
+#! /bin/csh 
+#
+#############################################################
+######  Configuration  ######################################
+#############################################################
+set arch    = `./ARCHITECTURE`
+set xincloc = /projects/X11/X11/common/include
+set xlibloc = /projects/X11/X11/$arch/lib
+# xapploc is less important than xincloc and xlibloc
+set xapploc = /usr/lib/X11/app-defaults
+#############################################################
+######  DEFAULTS       ######################################
+#############################################################
+set lintflag = "-C"
+set lintextras
+set ldextras 
+set p                    # Number of processors to use (on Sequent)
+set cc = "CC=cc"
+set make = make
+#############################################################
+#############################################################
+######  Also look at the TOOL-LIST files to see what ########
+######  is going to be compiled.		     ########
+#############################################################
+#############################################################
+
+echo ""
+echo "Installation Script for OCTTOOLS 5.1"
+echo ""
+echo "  You should have read the README and CHANGES file before running INSTALL"
+echo ""
+echo "  If your distribution is still folded, you should run PREINSTALL"
+echo "  Edit the TOOL-LIST files in common/src and common/src/* "
+echo "  if you want to affect which tools are compiled."
+echo ""
+
+set CWD = `pwd`
+set OO =  $CWD/$arch
+if ( $?OCTTOOLS ) then
+	if ( $OCTTOOLS != $OO ) then
+	     set oct = $OCTTOOLS
+	     cd $oct:h
+	     if ( `pwd` != $CWD ) then
+		 echo 
+		 echo "---------------------------------------------------------"
+		 echo "Possible wrong value for OCTTOOLS variable"
+		 echo "It is        $OCTTOOLS"
+		 echo "It should be $OO"
+                 echo
+                 echo "If the two paths are in fact equivalent, let's continue"
+	 	 echo "else, it is best to stop and fix the value of OCTTOOLS"
+		 echo -n "Continue anyway ? (yes,no) "
+		 set rep = $<
+	         if ( $rep != "yes" ) exit 1
+	     else 
+		 echo $OCTTOOLS is the same as $OO
+	         cd $CWD
+	     endif
+	endif
+else 
+	echo "Setting OCTTOOLS environment variable to $OO (Adding to ~/.cshrc)"
+	echo "setenv OCTTOOLS $OO" >> ~/.cshrc
+	setenv OCTTOOLS $OO
+endif
+
+
+####################  Create all needed directories.
+foreach i ( \
+	./common/include \
+	./common/man \
+	./common/man/man1 \
+	./common/man/man3 \
+	./common/man/man5 \
+	./common/document \
+	./common/doc \
+	./common/lib \
+	./common/lib/utils \
+	${OCTTOOLS} \
+	${OCTTOOLS}/bin	\
+	${OCTTOOLS}/bin/rpc	\
+	${OCTTOOLS}/lib	\
+	)
+   if ( ! -d $i ) then
+	echo "Mkdir $i"
+	mkdir $i
+   endif
+end
+
+cd $OCTTOOLS
+if ( ! -e Makefile ) ln -s ../Makefile
+
+#
+# Shared directories. One level first, then two levels.
+# 
+foreach i ( src tech include doc document man )
+    if ( ! -d $OCTTOOLS/$i ) then 
+	echo Making symbolic link ../common/$i to ./$i
+	ln -s ../common/$i ./$i
+    endif
+end
+
+cd lib
+foreach i (vem vov utils musa phyt oct2hilo misII)
+    if ( ! -d ../../common/lib/$i ) then 
+	echo Creating directory ../../common/lib/$i
+	mkdir ../../common/lib/$i
+    endif
+
+    if ( ! -d ./$i ) then 
+	echo Making symbolic link to ../../common/$i 
+	ln -s ../../common/lib/$i 
+    endif
+end
+
+cd $OCTTOOLS
+
+echo "What compiler optimization level do you want to use (defaults to"
+echo -n "the compilers default, examples are -O and -O3)?"
+set opt = $<
+
+# No more testing installation:
+#echo -n "Do you want to test the installation (y/n, defaults to n)?"
+#set test = $<
+#if (${test} == 'y') then
+#    set test = "test"
+#else
+#    set test
+#endif
+set test
+
+echo "Do you want to create -g versions of the packages"
+echo -n "(y/n, defaults to n)?"
+set debugg = $<
+if (${debugg} == 'y') then
+    set debugg = 1
+else
+    set debugg = 0
+endif
+
+echo "Do you want to create -pg versions of the packages"
+echo -n "(y/n, defaults to n)?"
+set debugpg = $<
+if (${debugpg} == 'y') then
+    set debugpg = 1
+else
+    set debugpg = 0
+endif
+
+if (${debugg} && ${debugpg}) then
+    set debug = "debug"
+else if (${debugg}) then
+    set debug = "debug-g"
+else if (${debugpg}) then
+    set debug = "debug-pg"
+else
+    set debug
+endif
+
+echo "Do you want to create lint libraries for the packages"
+echo -n  "(y/n, defaults to n)?"
+set lint = $<
+if (${lint} == 'y') then
+    set lint = "install.lint"
+else
+    set lint
+endif
+
+echo "Do you want to build the programs that use the X window system"
+echo -n "(y/n, defaults to y)?"
+set xwindows = $<
+set makefile = "Makefile"
+if (${xwindows} == 'n') then
+    setenv NO_X
+    set install = "NO_X= install"
+else
+    set install = "install"
+    echo -n "Location of X includes ($xincloc)?"
+    set in = $<
+    if ("${in}" != "") then
+	set xincloc = ${in}
+    endif
+    echo -n "Location of X libraries ($xlibloc)?"
+    set in = $<
+    if ("${in}" != "") then
+	set xlibloc = ${in}
+    endif
+    echo -n "Location of X application defaults ($xapploc)?"
+    set in = $<
+    if ("${in}" != "") then
+	set xapploc = ${in}
+    endif
+    if ( ! -e ${xincloc}/X11/X.h ) then
+	echo "ERROR: Bogus location for XINCLOC ${xincloc}"
+	echo "   please change it"
+	exit 1
+    endif 
+    if ( ! -e ${xlibloc}/libX11.a ) then
+	echo "ERROR: Bogus location for XLIBLOC ${xlibloc}"
+	echo "   please change it"
+	exit 1
+    endif 
+
+endif
+
+# Do this in all cases: get the variables ready.
+set xlibloc = -L${xlibloc}
+set xincloc = -I${xincloc}
+
+
+rm -rf make.out.old
+if (-e make.out) then
+    mv make.out make.out.old
+endif
+
+
+# defaults
+
+# SEQUENT
+if (("${arch}" == "sequent") || ("${arch}" == "symmetry")) then
+    # The sequent compiler does not understand the -L option
+    set xlibloc = ""
+    setenv PARALLEL 10
+    set p = '&'
+endif
+
+# DEC MIPS
+if ("${arch}" == "mips") then
+    set lintflag = "-o"
+    set lintextras = "-h"
+endif
+
+# IBM RS/6000, AIX V3.1
+if (($arch == "rs6000") || ("${arch}" == "aixv3.1") || ("${arch}" == "ibmr2")) then
+    set cc = "CC=xlc"
+    set ldextras = "-lbsd"
+    set lintflag = "-o"
+endif
+
+# APOLLO
+if ("${arch}" == "apollo") then
+    set cc = "CC=cc -A nansi"
+endif
+
+# for hpux, hopefully this won't affect other compilers
+setenv CCOPTS "-D_HPUX_SOURCE -Wc,-Nd4000,-Ns5000,-Ne700,-Np300,-Nw500"
+
+# for hpux, it doesn't have df...
+if (-e /usr/bin/bdf) then
+    ln -s /usr/bin/bdf ~/bin/df
+endif
+
+# install a touch that deals with -f (mainly for hpux)
+# ln -s ~/utils/hpux-touch $OCTTOOLS/bin/touch
+
+
+
+# Some tools in the installation script may be vov-ized.
+# Make sure that VOV is made inactive.
+if ( $?VOV_HOST_NAME ) then
+    unsetenv VOV_HOST_NAME
+endif
+
+
+# for those that install as a user with restrictive umasks
+umask 022
+
+echo "started at `date`" > make.out
+echo "" >> make.out
+
+set command = "$make -k ${cc} MAKE=$make OCTTOOLS=$OCTTOOLS MAKEFILE=$makefile LINTCREATEFLAG=$lintflag LINTEXTRAS=$lintextras LDEXTRAS=${ldextras} XAPPLOC=${xapploc} XINCLOC=${xincloc} XLIBLOC=${xlibloc} OPTFLAG=$opt P=$p ${install} ${lint} $test $debug"
+echo ""
+echo "Issuing the command:"
+echo "  $command"
+echo ""
+echo "The base installation should take approximately"
+echo "(no optimization and assuming a lightly loaded machine):"
+echo ""
+echo "	DEC VAX 8650/8800:	 3-4 hours"
+echo "	Sequent Symmetry:	 2-3 hours (10 processors)"
+echo "	DECSystem 5400:		 3.5 hours"
+echo "	IBM RS/6000 - 530:	 2-3 hours"
+echo "	DECStation 3100:	 7-8 hours"
+echo "	SUN 4/280:		 4-5 hours (NFS file system)"
+echo "	SUN 3/160:		 7-8 hours (NFS file system)"
+echo "	DEC MicroVax II:	 16-17 hours (NFS file system)"
+echo ""
+echo "The log will be in $OCTTOOLS/make.out"
+echo ""
+echo "Please mail to 'octtools-maintainers-request@eros.berkeley.edu'"
+echo "so you can be placed on the octtools bug fix / updates mailing list" 
+echo ""
+
+echo "Do you want to delay the execution of the compilation ?"
+echo -n "Delay in seconds (default 0)"
+set delay = $<
+if ( $delay > 0 ) then 
+	echo "Sleeping for $delay seconds"
+        sleep $delay
+endif
+$command >& make.out
+
+echo "" >> make.out
+
+echo "ended at `date`" >> make.out
+echo "done"
+

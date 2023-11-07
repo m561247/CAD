@@ -1,0 +1,11 @@
+CCT  (rise,fall,mrise,mfall,oc1,ic1,ic2) nimp (O,A1,B2)        
+                        
+capacitor(ic1) cap1(A1);
+capacitor(ic2) cap2(B2);
+capacitor(oc1) cap3(O);
+
+** WIRE DECLARATIONS
+
+INPUT           A1 B2;
+WIRE    (rise,fall,mrise,mfall,0) O = A1 OR NOT B2.
+

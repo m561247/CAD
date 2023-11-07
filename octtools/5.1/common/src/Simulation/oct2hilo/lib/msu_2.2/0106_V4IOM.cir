@@ -1,0 +1,9 @@
+CCT	V4iom(pad, in, out, enable)
+
+V4io	G1(pad, in, out, enable);
+
+INPUT 	out enable;
+WIRE	in;
+TRI	pad;
+.
+

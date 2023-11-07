@@ -1,0 +1,60 @@
+This is the source directory for version 2 of Crystal, an
+MOS VLSI timing analysis program.  There are actually two
+programs here, Crystal and Mkcp.  Crystal is the timing
+analyzer, and Mkcp is a utility program to generate models
+for Mkcp by running SPICE over simple circuits.  This directory
+contains the following things:
+
+- *.c, *.h: Sources for Crystal and Mkcp.
+
+- Makefile: describes how to create runnable versions of
+  Crystal and Mkcp.  To re-compile everything, type "rm *.o"
+  followed by "make crystal mkcp".  Crystal and Mkcp should
+  normally be installed in ~cad/bin, although this isn't
+  necessary in order to run them.
+
+- crystal.1 mkcp.1: these are Unix man pages:  terse but
+  relatively complete descriptions of the two programs.  They
+  should normally be installed in ~cad/man/man1.
+
+- manual.tblms: a tutorial on using Crystal.  To print it, type
+  "make manual".  Unfortunately, this probably won't work, because
+  it depends on special Berkeley software for inserting pictures
+  into the typeset output.  If you don't have Gremlin/Grn/Ditroff
+  from us, run off the manual using "tbl manual.tblms | troff -ms".
+  This won't look very pretty, but may produce something readable.
+  The manual should usually be kept in ~cad/doc so users can get
+  to it.
+
+- pics:  this is a subdirectory containing Gremlin pictures for the
+  tutorial.
+
+- mkcplib:  this is a library of the cells we used to generate the
+  default nMOS slope parameters.  It will give you some ideas about
+  how to use Mkcp.  See the Makefile in this directory, which tells
+  how to run Mkcp on these examples.
+
+- other junk:  since this is a temporary advance distribution, it
+  contains everything in my development directory, including a lot
+  of stuff not mentioned above.  You can just ignore everything
+  that doesn't appear useful, although you might find some of it
+  helpful (like the RISC test critical paths in the eval directory).
+
+If you want to make changes to the code, you'll be pretty much
+on your own.  The best start is the paper that appeared in the
+IEEE Transactions on Computer-Aided Design in July 1985.
+There's no overall documentation for how the
+program hooks together.  There are fairly descriptive headers
+for each procedure, plus additional information at the front of
+every source file.  Good luck!
+
+Richard Kenner at NYU has made a number of modifications and enhancements
+to Crystal.  Right now, they are separated from the "standard"
+Crystal.  There are two files here related to Kenner's changes.
+"Kenner1" contains a textual description of what he did, and the
+file "kenner2" contains a shell script that will modify all the
+Magic source files into his configuration.  I haven't done any
+testing of his changes, so you'll be on your own with this (or you
+can contact him for help).
+
+					-John Ousterhout-

@@ -1,0 +1,37 @@
+#! /bin/csh -f
+
+
+set LIST = ( 			\
+ 	Utils 			\
+	Packages		\
+	)
+
+if ( ! $?NO_X ) set LIST = ($LIST Xpackages )
+
+set LIST = ($LIST			\
+		Framework		\
+		Layout			\
+		Synthesis		\
+		OtherTools		\
+		Simulation		\
+		Technology		\
+		)
+
+# This uses g++. Comment it out if you do not have it.
+set LIST = ($LIST Vov )
+
+# The Lisp packages are not build by default now.
+# echo LightLisp OctLisp
+
+
+set LIST = ($LIST BearFP-1.1 )
+
+# Do this last
+set LIST = ($LIST BIGOCT )
+
+
+foreach i ( $LIST )
+	if ( -d $i ) then
+		echo $i
+	endif 
+end

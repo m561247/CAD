@@ -1,0 +1,19 @@
+NAME: steps
+DESCRIPTION: New version of steps
+TYPE: T
+PACKAGES: list oct errtrap oh vov options  mm port pep da
+MISC: 
+
+EXTRAFLAGS: 
+
+SOURCES: node.c oct2spicelib.c sources.c table.c toolmain.c
+HEADERS: defs.h table.h
+OBJECTS: node.o oct2spicelib.o sources.o table.o toolmain.o
+SYSLIBS:  -lm
+
+VERBATIMSTART
+VERBATIMEND
+
+TESTNAME: $(NAME)-test
+TESTSOURCES: 
+TESTOBJECTS: 

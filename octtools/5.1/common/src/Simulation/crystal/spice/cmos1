@@ -1,0 +1,39 @@
+SPICE deck for or from Crystal
+
+* CMOS device models for what we think MOSIS looks like.
+* These models include Vdd and Vbb definitions.
+
+.model  n  nmos level=2  vto=1.0  lambda=0.01 
++  uo=475  phi=0.5
++  cgso=1.3e-10  cgdo=1.3e-10  cgbo=4.10e-10  rsh=40  cj=6e-4
++  cjsw=4e-10  js=3.5e-5  tox=5.5e-8  nsub=5e15  
++  xj=6e-7  ld=4e-7  ucrit=8e4  uexp=0.25  vmax=5e4
++  mj = 0.5 mjsw = 0.5 pb = 0.7 neff = 2.5
+
+.model  p  pmos  level=2  vto=-1.0 lambda=0.01
++  uo=190  phi=0.492
++  cgso=1.3e-10  cgdo=1.3e-10  cgbo=4.10e-10  rsh=40  cj=4.1e-4
++  cjsw=2.5e-10  js=3.5e-5  tox=5.5e-8  nsub=3e14  
++  xj=6e-7  ld=4e-7  ucrit=8e4  uexp=0.25  vmax=5e4
++  mj = 0.5 mjsw = 0.5 pb = 0.7 neff = 2.5
+
+.OPTIONS NOMOD
+.WIDTH out=80
+VDD 1 0 5
+
+** The following lines define a simple circuit.  To
+** try other circuits, replace the lines below with
+** new ones.
+
+m1 4 3 0 0 n l=4u w=4u
+m2 4 3 1 1 p l=4u w=4u
+m3 5 4 0 0 n l=4u w=4u
+m4 1 4 5 1 p l=4u w=4u
+c1 5 0 1p
+c2 4 0 1p
+vin 3 0 pulse(5 0 0ns 0ns 0ns)
+
+.tran .5ns 100ns
+.print tran V(3) V(4) V(5) (0,5)
+
+.end

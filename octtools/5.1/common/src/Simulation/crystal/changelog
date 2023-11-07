@@ -1,0 +1,62 @@
+This file contains user-visible changes made to Crystal
+after about October 1, 1982:
+
+October 1982:
+Added "spice" command.
+
+November 29, 1982:
+Changed "set" to also make nodes into busses (this simulates
+a probe on-chip).  Also changed to let newest set value
+override any previous set values.
+
+January 4, 1982:
+Changed pathAux so that duplicate stages in a trace-back are
+ignored except for the first.
+
+January 9, 1982:
+Removed "extracap" command and added "cap" and "res" commands.
+
+Version 3 updates by Fred W. Obermeier, fwo@ernie.Berkeley.EDU:
+
+	1. patch sscanf call in commands.c so that Crystal works under ULTRIX
+	2. Increased PIECELIMIT (to 50) so that a long string of pass gates
+		typically found in Manchester carry chains can be analyzed.
+
+April 25, 1988:
+Version 4 updates by Fred W. Obermeier, fwo@ernie.Berkeley.EDU:
+	This version is upward compatible from earlier version.
+
+	1. patch sscanf call in commands.c so that Crystal works under ULTRIX
+	2. Increased PIECELIMIT (to 50) so that a long string of pass gates
+		typically found in Manchester carry chains can be analyzed.
+	3. Add command: totalcapacitance
+		to help compute dynamic power consumption
+	4. Add command: prnode {optional regular-expressions of node names}
+		to print worst-case node time information.
+		(a -1.00 indicates that node was not set from
+		any of the delay statements so far)
+	5. Add command: block node node ...
+		To prevent critical paths from going throught these nodes.
+		This is used to isolate critical paths to a subsection of
+		a larger design.
+		Declaring a node as always 0 or 1 would also prevent a
+		critical path from passing through, but the delay for
+		this node would not be set (since it doesn't change.)
+	6. Added options: noseeflows, seeallflows, and seeflows
+		These commands function similar to noseesettings ...
+		exect they print out the nodes that are visited while
+		trying to propagate the flow directions.
+		("Marking transistor flows ...").
+	7. Added debug.c which contains a few structures for debuging crystal.
+
+November 15, 1988:
+Updated by Andrew Wiggin, wiggin@eros.Berkeley.EDU.
+An OCT database interface layer was added.
+	1. The '-oct' option puts crystal into an OCT mode which uses
+		OCT parsing routines to create crystal's data structures.
+	2. The '-t' option traces the parsing (only in OCT mode).
+	3. The '-v' option is a more verbose version of '-t'.
+	4. Rudemetary capacitance extraction was added for the parsing
+		of OCT cells, since this information is not included (as it
+		is in a .sim file).  This is believed to reduce the expected
+		accurary of crystal (only in OCT mode).

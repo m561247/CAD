@@ -1,0 +1,2951 @@
+rm -f att.c propagate.c unitmodel.c
+ed - build.c << '-*-END-*-'
+748a
+    HashKill(&pairTable);
+.
+745c
+	printf("Warning: no GND node found.\n");
+.
+740c
+	printf("Warning: no Vdd node found.\n");
+.
+725d
+721,722c
+		    printf("Error in attribute for node %s on line %d: %s.\n",
+			node1, lineNumber, errMsg);
+.
+718c
+		if ((a1 = NextField(&ptr)) == NULL) goto err5;
+
+		errMsg = parseNodeAtt(BuildNode(node1), a1);
+.
+713c
+		    err5: printf("Not enough attribute info on line %d.\n",
+.
+711c
+		/* As usual, parse locally to save time. */
+
+		ptr = &line[1];
+		if ((node1 = NextField(&ptr)) == NULL)
+.
+705a
+		PrintUnits = units;
+		if (match("cmos", tech) != 0)
+		    Vinv = Vdd/2;
+.
+699c
+		if (sscanf(line, "| units: %f tech: %9s", &units, tech) != 2)
+.
+696c
+	     * unit scale factor.   If technology is cMOS, set Vinv to
+	     * Vdd/2. */
+.
+692c
+		n = BuildNode(node1);
+		if (! (n->n_flags & NODERESISTSET))
+		    n->n_R += res;
+.
+649c
+		    if (! (n->n_flags & NODERESISTSET))
+			n->n_R += MetalR * Quad(ma, mp);
+.
+642c
+		    if (! (n->n_flags & NODERESISTSET))
+			n->n_R += PolyR * Quad(pa, pp);
+.
+635c
+		    if (! (n->n_flags & NODERESISTSET))
+			n->n_R += DiffR * Quad(da, dp);
+.
+571a
+
+		else if ((fet->f_typeIndex == FET_NCHAN)
+		    && (fet->f_gate == VddNode)
+		    && ((fet->f_source == GroundNode)
+		    || (fet->f_drain == GroundNode)))
+		    fet->f_typeIndex = FET_NCLOAD;
+		else if ((fet->f_typeIndex == FET_PCHAN)
+		    && (fet->f_gate == GroundNode)
+		    && ((fet->f_source == VddNode)
+		    || (fet->f_drain == VddNode)))
+		    fet->f_typeIndex = FET_PLOAD;
+
+		/* If this is a feedback transistor, find our source/drain
+		 * terminal which is not Vdd.  Then search for any n-channel
+		 * transistors which have that node as a source/drain and
+		 * whose other source/drain terminal is not connected to
+		 * GND.  If found, set as a single-ended pass transistor.
+		 * We can also set its flow direction.  Since this transistor
+		 * is supposed to have one terminal tied to Vdd, we will only
+		 * check one non-power terminal.   */
+
+		if (fet->f_typeIndex == FET_PFEED)
+		{
+		    if ((fet->f_source != VddNode)
+			&& (fet->f_source != GroundNode))
+		    {
+			n = fet->f_source;
+			p = n->n_pointer;
+		    }
+		    else if ((fet->f_drain != VddNode)
+			&& (fet->f_drain != GroundNode))
+		    {
+			n = fet->f_drain;
+			p = n->n_pointer;
+		    }
+		    else p = NULL;
+		    
+		    while (p != NULL)
+		    {
+			register FET *f2;
+
+			f2 = p->p_fet;
+			if (f2->f_typeIndex == FET_NCHAN)
+			{
+			    if ((f2->f_source == n)
+				&& (f2->f_drain != GroundNode))
+			    {
+			        f2->f_typeIndex = FET_NSPASS;
+				f2->f_flags |= FET_NOSOURCEINFO;
+				f2->f_partner = fet;
+			    }
+			    else if ((f2->f_drain == n)
+				&& (f2->f_source != GroundNode))
+			    {
+				f2->f_typeIndex = FET_NSPASS;
+				f2->f_flags |= FET_NODRAININFO;
+				f2->f_partner = fet;
+			    }
+			}
+			p = p->p_next;
+		    }
+		}
+
+		/* If this is an n-channel transistor with both source/drain
+		 * terminals not connected to GND, try to find a FET_PFEED
+		 * transistor connected to each terminal.  If one is found,
+		 * set this transistor to type FET_NSPASS and set flow
+		 * indicators.  Avoid searching Vdd or GND while doing this */
+		 
+		if (fet->f_typeIndex == FET_NCHAN)
+		{
+		    if ((fet->f_source != GroundNode)
+			&& (fet->f_drain != GroundNode)
+			&& (fet->f_drain != VddNode))
+		    {
+			n = fet->f_drain;
+			p = n->n_pointer;
+			while (p != NULL)
+			{
+			    register FET *f2;
+
+			    f2 = p->p_fet;
+			    if ((f2->f_typeIndex == FET_PFEED)
+				&& ((f2->f_source == n) || (f2->f_drain == n)))
+			    {
+				fet->f_typeIndex = FET_NSPASS;
+				fet->f_flags |= FET_NODRAININFO;
+				fet->f_partner = f2;
+				break;
+			    }
+			    p = p->p_next;
+			}
+		    }
+		    if ((fet->f_drain != GroundNode)
+			&& (fet->f_source != GroundNode)
+			&& (fet->f_source != VddNode))
+		    {
+			n = fet->f_source;
+			p = n->n_pointer;
+			while (p != NULL)
+			{
+			    register FET *f2;
+
+			    f2 = p->p_fet;
+			    if ((f2->f_typeIndex == FET_PFEED)
+				&& ((f2->f_source == n) || (f2->f_drain == n)))
+			    {
+				fet->f_typeIndex = FET_NSPASS;
+				fet->f_flags |= FET_NOSOURCEINFO;
+				fet->f_partner = f2;
+				break;
+			    }
+			    p = p->p_next;
+			}
+		    }
+		}
+
+.
+552a
+		/* If this transistor has a partner, it must be part of
+		 * a n-channel/p-channel transmission gate.  If there is
+		 * a source/drain terminal in common, merge the
+		 * flow attributes of these transistors.  If this
+		 * transistor is no longer FET_NPASS or FET_PPASS, 
+		 * break the association and do nothing.
+		 */
+		 
+		if (fet->f_partner != (FET *) NULL) 
+		{
+		    register FET *f2;
+
+		    f2 = fet->f_partner;
+		    if ((fet->f_typeIndex != FET_NPASS)
+			&& (fet->f_typeIndex != FET_PPASS))
+		    {
+			f2->f_partner = (FET *) NULL;
+			fet->f_partner = (FET *) NULL;
+			if (f2->f_typeIndex == FET_NPASS)
+			    f2->f_typeIndex = FET_NCHAN;
+			else if (f2->f_typeIndex == FET_PPASS)
+			    f2->f_typeIndex = FET_PCHAN;
+		    }
+		    else if ((fet->f_source == f2->f_source)
+			|| (fet->f_drain == f2->f_drain))
+			mergeFETAtt(fet, f2);
+		    else if ((fet->f_source == f2->f_drain)
+			|| (fet->f_drain == f2->f_source))
+		    {
+			swapSourceDrain(f2);
+			mergeFETAtt(fet, f2);
+		    }
+		}
+
+.
+548a
+			printf("\tFET: %s\n", PrintFET(fet));
+.
+538a
+			printf("\tFET: %s\n", PrintFET(fet));
+.
+528a
+			printf("\tFET: %s\n", PrintFET(fet));
+.
+497,502c
+			/* If source and drain of new transistor are
+			 * reversed from that of previous transistor, swap
+			 * source and drain (and all flow attributes)
+			 * so any attributes set on this transistor will
+			 * be correctly entered. */
+
+			if (f2->f_drain == fet->f_source)
+			    swapSourceDrain(f2);
+
+			if ((f2->f_gate == fet->f_gate)
+			    && (f2Type == fet->f_typeIndex))
+			{
+			    f2->f_area += fet->f_area;
+			    f2->f_aspect = 1.0/(1.0/fet->f_aspect
+				+ 1.0/f2->f_aspect);
+
+			    free((char *) fet);
+			    fet = f2;
+			    break;
+		        }
+			else if ((f2->f_typeIndex == FET_NCHAN)
+			    && (fet->f_typeIndex == FET_PCHAN))
+			{
+			    f2->f_typeIndex = FET_NPASS;
+			    fet->f_typeIndex = FET_PPASS;
+			    f2->f_partner = fet;
+			    fet->f_partner = f2;
+			}
+			else if ((f2->f_typeIndex == FET_PCHAN)
+			    && (fet->f_typeIndex == FET_NCHAN))
+			{
+			    f2->f_typeIndex = FET_PPASS;
+			    fet->f_typeIndex = FET_NPASS;
+			    f2->f_partner = fet;
+			    fet->f_partner = f2;
+			}
+.
+492,495c
+		    f2Type = f2->f_typeIndex;
+		    if (f2Type == FET_PPASS)
+			f2Type = FET_PCHAN;
+		    else if (f2Type == FET_NPASS)
+			f2Type = FET_NCHAN;
+
+		    if (((f2->f_source == fet->f_source)
+			&& (f2->f_drain == fet->f_drain))
+			|| ((f2->f_source == fet->f_drain)
+			&& (f2->f_drain == fet->f_source)))
+.
+490c
+		    register FET *f2;
+		    register int f2Type;
+
+.
+483,485d
+474a
+		 *
+		 * If this transistor is an n-channel transistor and the
+		 * matching transistor is a p-channel transistor (or vice
+		 * versa), flag them as FET_NPASS and FET_PPASS.
+.
+467,468c
+		/* Check at this point for a transistor being used a a
+		 * capacitor (source and drain nodes the same).  If so,
+		 * handle it at this point by simply adding the capacitances
+		 * and free the transistor.  (If the all three terminals are
+		 * tied together, ignore the transistor entirely.)
+		 */
+
+		if (fet->f_source == fet->f_drain)
+		{
+		    if (fet->f_gate != fet->f_source)
+		    {
+			typeEntry = &(TypeTable[type]);
+			cap = width * units * 2 * typeEntry->t_cPerWidth;
+			fet->f_gate->n_C +=
+			    fet->f_area*typeEntry->t_cPerArea + cap;
+			fet->f_source->n_C += cap;
+		    }
+		    free((char *) fet);
+		    continue;
+		}
+
+		/* Check for transistors between the same source and drain
+		 * as this transistor.  If it is the same type and also
+		 * has the same gate connection, just lump the
+.
+425a
+		fet->f_partner = (FET *) NULL;
+.
+381,382c
+	     * end of the line.  e means nMOS enhancement, d means
+	     * nMOS depletion, p means p-type cMOS, n means n-type cMOS.
+.
+379c
+	    /* Transistor: e/d/p/n gate source drain length width x y.
+.
+367a
+    HashInit(&pairTable, 16);
+.
+343,344c
+    register Node *n;
+    register Pointer *p;
+.
+333a
+    char tech[10];
+.
+329,330c
+#define LINELENGTH 5000
+.
+307a
+mergeFETAtt(f1, f2)
+FET *f1, *f2;		/* FET's whose attributes are to be merged. */
+
+/*---------------------------------------------------------
+ *	mergeFETAtt will merge the flow attributes of two fets
+ *	so that both have the union of the flow attributes that each
+ *	had.  This enables a designer to only label the flow attribues
+ *	on one of a pair of cMOS transmission gate transistors.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	Flow attribute flags are merged and a merged flow list is created
+ *	for the two transistors.
+ *---------------------------------------------------------
+ */
+
+{
+    FPointer *flowlist;		/* Used to head new merged list. */
+    register FPointer *fp, *fp1;
+    
+    /* First merge the source and drain information flow flags.  This is
+     * the simple part.  */
+     
+    f1->f_flags |= (f2->f_flags & (FET_NOSOURCEINFO|FET_NODRAININFO));
+    f2->f_flags |= (f1->f_flags & (FET_NOSOURCEINFO|FET_NODRAININFO));
+    
+    /* Now collect any flow pointers from the transistors and build
+     * flowlist.  */
+     
+    flowlist = (FPointer *) NULL;
+    
+    fp = f1->f_fp;
+    while (fp != NULL)
+    {
+	fp1 = fp->fp_next;
+	addFlow(&flowlist, fp);
+	fp = fp1;
+    }
+    fp = f2->f_fp;
+    while (fp != NULL)
+    {
+	fp1 = fp->fp_next;
+	addFlow(&flowlist, fp);
+	fp = fp1;
+    }
+    
+    /* Now make a copy of the list and use it as the flow list for
+     * f2.  Use the list itself for f1.  */
+     
+    f2->f_fp = (FPointer *) NULL;
+    for (fp = flowlist; fp != NULL; fp = fp->fp_next)
+    {
+	fp1 = (FPointer *) malloc(sizeof(FPointer));
+	fp1->fp_flow = fp->fp_flow;
+	fp1->fp_flags = fp->fp_flags;
+	fp1->fp_next = f2->f_fp;
+	f2->f_fp = fp1;
+    }
+    f1->f_fp = flowlist;
+}
+
+
+addFlow(list, newfp)
+FPointer **list;	/* Pointer to flow list. */
+FPointer *newfp;	/* New entry to add to list. */
+
+/*---------------------------------------------------------
+ *	addFlow is a utility routine for mergeFETAtt.  It
+ *	searches a list and if no entry which is the same
+ *	as newfp is present, newfp is added to the list.
+ *	Otherwise, newfp is freed.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	See above.
+ *---------------------------------------------------------
+ */
+
+{
+    register FPointer *fp;
+    
+    for (fp = *list; fp != NULL; fp = fp->fp_next)
+    {
+	if ((fp->fp_flow == newfp->fp_flow)
+	    && (fp->fp_flags == newfp->fp_flags))
+	{
+	    free((char *) newfp);
+	    return;
+	}
+    }
+    
+    /* Not in list.  Add it. */
+    
+    newfp->fp_next = *list;
+    *list = newfp;
+}
+
+
+.
+306a
+/*---------------------------------------------------------
+ *	swapSourceDrain swaps the source and drain terminals
+ *	of the specifed FET.  This is used when two transistors
+ *	with the same source and drain are found.  If they are
+ *	reversed, the older source and drain are swapped to
+ *	simplify flow attribute handling.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	The flow attributes (if any) of the transistor are reversed.
+ *---------------------------------------------------------
+ */
+
+{
+    register Node *n;
+    register int flags;
+    register FPointer *fp;
+
+    /* Reverse the source and drain terminal nodes. */
+
+    n = fet->f_source;
+    fet->f_source = fet->f_drain;
+    fet->f_drain = n;
+
+    /* Reverse flow direction indications. */
+
+    flags = fet->f_flags;
+    fet->f_flags &= ~ (FET_NODRAININFO|FET_NOSOURCEINFO);
+    if (flags & FET_NODRAININFO)
+	fet->f_flags |= FET_NOSOURCEINFO;
+    if (flags & FET_NOSOURCEINFO)
+	fet->f_flags |= FET_NODRAININFO;
+
+    /* Swap all flow attributes between source and drain. */
+
+    for (fp = fet->f_fp; fp != NULL;
+	fp = fp->fp_next)
+    {
+	if (fp->fp_flags == FP_SOURCE)
+	    fp->fp_flags = FP_DRAIN;
+	else
+	    fp->fp_flags = FP_SOURCE;
+    }
+}
+
+.
+305a
+    
+
+swapSourceDrain(fet)
+FET *fet;		/* Pointer to FET whose terminals are to be swapped. */
+.
+296c
+	    flow = BuildFlow(attribute);
+.
+289c
+	else if (strcmp(attribute, "Out") == 0)
+.
+284c
+	if (strcmp(attribute, "In") == 0)
+.
+275a
+	    if (pairID != NULL)
+	    {
+		if ((typeIndex != FET_NPASS) && (typeIndex != FET_PPASS))
+		    return sprintf(msg,
+			"pair identifier not allowed with type: %s",
+			attribute);
+		h = HashFind(&pairTable, pairID);
+		f2 = (FET *) HashGetValue(h);
+		if (f2 == NULL)
+		    HashSetValue(h, fet);
+		else
+		{
+		    if (((fet->f_typeIndex == FET_NPASS)
+			&& (f2->f_typeIndex != FET_PPASS))
+			|| ((fet->f_typeIndex == FET_PPASS)
+			&& (f2->f_typeIndex != FET_NPASS)))
+			return sprintf(msg, "invalid transistor pair %s", 
+			    pairID);
+
+		    /* We have two transistors which make up a transmission
+		     * gate.  Set them as partners for each other.  */
+		    f2->f_partner = fet;
+		    fet->f_partner = f2;
+		    HashSetValue(h, (FET *) NULL);
+		}
+	    }
+.
+274c
+		return sprintf(msg, "unknown transistor type: %s", attribute);
+	    if ((TypeTable[fet->f_typeIndex].t_flags & FET_ON1) &&
+		(TypeTable[typeIndex].t_flags & FET_ON0))
+		return sprintf(msg,
+		    "cannot change n transistor to p type \"%s\"", attribute);
+	    else if ((TypeTable[fet->f_typeIndex].t_flags & FET_ON0) &&
+		(TypeTable[typeIndex].t_flags & FET_ON1))
+		return sprintf(msg,
+		    "cannot change p transistor to n type \"%s\"", attribute);
+.
+272c
+	    pairID = index(attribute, ':');
+	    if (pairID != NULL)
+		*pairID++ = '\0';
+	    typeIndex = ModelNameToIndex(attribute);
+.
+266,267c
+	 * it contains the name of the transistor's type.  Look up the
+	 * name and set the type.  If the attribute contains a pair-ID,
+	 * process it.
+.
+249,264d
+247d
+241,245c
+    while((attribute = nextAttribute(&string)) != (char *) NULL)
+.
+226a
+    HashEntry *h;
+    register FET *f2;
+.
+223c
+    register char *attribute, *pairID;
+.
+209a
+ *	Attributes connected to the source or drain are either the
+ *	strings "In" or "Out" or a flow indicator.
+ *
+ *	Attributes connected to the gate are either a transistor type
+ *	or are of the form "type:pair-ID" where "type" is a transistor
+ *	type and "pair-ID" is an identifier used to tie together the
+ *	two complementary transistors in a cMOS transmission gate.
+ *
+.
+202c
+ *	parseFETAtt parses an attribute string specified for
+.
+191a
+    static char *(attributes[]) = {
+	"precharged", "predischarged",
+ 	"bus", "capacitance", "clock", "notclock",
+	"dynamic", "input", "output", "resistance",
+	NULL};
+    static int flags[] = {
+	0, 0,
+	NODEISBUS, 0, NODEISCLOCK, NODEISCLOCKNOT,
+	NODEISDYNAMIC, NODEISINPUT, NODEISOUTPUT, NODERESISTSET};
+    static int argumentRequired[] = {
+	TRUE, TRUE,
+	FALSE, TRUE, FALSE, FALSE,
+	FALSE, FALSE, FALSE, TRUE};
+    static char argumentDelimiter[] = {
+	':', ':', 0, '+', ':', ':', 0, 0, 0, '='};
+    static float argumentDefault[] = {
+	0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0};
+	
+    static char msg[100];
+    char name[100];
+    register char *attribute, *p1, *p2;
+    register int index;
+    register float value;
+
+    while ((attribute = nextAttribute(&string)) != (char *) NULL)
+    {
+	p1 = attribute; p2 = name;
+	while (isalpha((*p2 = *p1))) p1++, p2++;	
+	*p2++ = '\0';
+	if (isupper(name[0])) name[0] = tolower(name[0]);
+	if ((index = Lookup(name, attributes)) == -1)
+	    return sprintf(msg, "Ambiguous attribute: %s", attribute);
+        else if (index == -2)
+	    return sprintf(msg, "Unknown attribute: %s", attribute);
+	else
+	{
+	    if ((*p1 == '\0') && argumentRequired[index])
+		return sprintf(msg, "Argument required: %s", attribute);
+	    value = argumentDefault[index];
+	    if (*p1 != '\0')
+	    {
+		if (argumentDelimiter[index] != *p1)
+		    if (argumentDelimiter[index] != '\0')
+			return sprintf(msg, "Argument not allowed: %s",
+			    attribute);
+		    else
+			return sprintf(msg, "Attribute syntax error: %s",
+			    attribute);
+		p1++;
+		if (index >= 2) value = atof(p1);
+		switch(index)
+		{
+		    case 0:	/* precharged */
+		    case 1:	/* predischarged */
+			BuildCharge(n, BuildNode(p1), (index == 0 ?
+			    NODEISPRECHARGED : NODEISPREDISCHARGED));
+			break;
+		    case 3:	/* capacitance */
+			n->n_C += value;
+			break;
+		    case 4:	/* clock */
+		    case 5:	/* clocknot */
+			if (p1[strlen(p1) - 1] == '%')
+			    value /= 100;
+			if ((value > 1.0) || (value <= 0.0))
+			    return sprintf(msg, "Invalid duty percentage: %s",
+				attribute);
+			n->n_clockDuty = value;
+			break;
+		    case 9:	/* resistance */
+			n->n_R = value;
+			break;
+		}
+	    }
+	    n->n_flags |= flags[index];
+	}
+    }
+
+.
+186,187c
+ *	If any attributes are parsed correctly, node flags may
+ *	be set.
+.
+178,179c
+ *	parseNodeAtt parses attribute information for a
+ *	node.  The attribute string must be a comma-separated
+ *	list.  If an attribute does not begin with "Cr:" or "Crystal:",
+ *	it is ignored.  An attribute consists of a name, a delimiter,
+ *	and an argument.  The delimiter and argument are not always
+ *	required.  An argument name need only be specified up to ambiguity.
+ *	The following node attributes are supported:
+ *	1. Resistance=n sets the total resistance of the
+ *	node to the value specifed.  All extractor resistances are
+ *	ignored.  This is used in the case of drivers with large
+ *	fan-outs because the extractor will otherwise sum all resistances.
+ *	2. Capacitance+n adds additional capacitance of n
+ *	(in ff) to the node.  This is usefull in the case of pads or probe
+ *	points.
+ *	3. Clock:p or Notclock:p sets a node to be a clock node and
+ *	specifies the duty percentage.  See MarkClock in mark.c for details.
+ *	P may be specified with an optional trailing "%".  If p is omitted,
+ *	it is defaulted to 1.
+ *	4. Precharged:node or Predischarged:node indicates that this node
+ *	is precharged or predischarged during the specified clock cycle.
+ *	I.e., when that clock is set to zero, the node is to be marked
+ *	precharged or predischarged.
+ *	5. Attributes corresponding to node flags input, output, 
+ *	dynamic, and bus.
+.
+173,174c
+parseNodeAtt(n, string)
+Node *n;
+.
+170a
+BuildCharge(node, chargingNode, flag)
+register Node *node;			/* Node being charged or discharged. */
+Node *chargingNode;			/* Node doing charging. */
+int flag;				/* NODEISPRECHARGED or ...DISCHARGED.*/
+
+/*--------------------------------------------------------
+ *	This procedure adds a Charge record for a node to the
+ *	charging list of chargingNode.  If such an entry is already
+ *	present, nothing is done.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects: 
+ *	A Charge structure may be created and added to the chargeList
+ *	of chargingNode.
+ *---------------------------------------------------------
+ */
+
+{
+    register Charge *c;
+
+    for (c = chargingNode->n_chargeList; c != NULL; c = c->c_next)
+	if ((c->c_node == node) && (c->c_flags == flag)) return;
+
+    c = (Charge *) malloc(sizeof(Charge));
+    c->c_node = node;
+    c->c_flags = flag;
+    c->c_next = chargingNode->n_chargeList;
+    chargingNode->n_chargeList = c;
+}
+
+
+char *
+nextAttribute(p)
+char **p;		/* Pointer to  string pointer */
+
+/*--------------------------------------------------------
+ *	This procedure picks attributes out of strings.
+ *	The string pointed to indirectly by p is assumed to
+ *	consist of zero or more attribute fields separated by
+ *	commas.  Each attribute may also have an optional '@',
+ *	'$', or '@' character at the end which is stripped off.
+ *
+ *	Results:
+ *	The return value is a pointer to the first character of the
+ *	first attribute  of the string.  NULL is returned if there are
+ *	no more attributes left in the string.
+ *
+ *	Side Effects:
+ *	The pointer p is updated to refer to the next attribute after the
+ *	one returned.  The string is modified by replacing the first comma
+ *	(or trailing '@', '$', or '^') after the first attribute with a
+ *	zero character.
+ *---------------------------------------------------------
+ */
+
+{
+    register char *string, lastchar;
+
+    while ((string = NextFieldComma(p)) != NULL)
+    {
+	/* Make sure the first characters of the attribute are the letters
+	 * "Crystal:" or "Cr:".  Then skip them.  Also, remove trailing
+	 * "$", "@", or "^" characters.
+	 */
+     
+	if (strncmp(string, "Cr:", 3) == 0) string += 3;
+	else if (strncmp(string, "Crystal:", 8) == 0) string += 8;
+	else continue;
+
+	lastchar = string[strlen(string) - 1];
+	if ((lastchar == '@') || (lastchar == '$') || (lastchar == '^'))
+	    string[strlen(string) - 1] = '\0';
+	if (*string == '\0') continue;
+	return(string);
+    }
+    return((char *) NULL);
+}
+
+
+.
+147,148c
+    register Flow *flow;
+    register HashEntry *h;
+.
+120c
+    register Pointer *p;
+.
+93a
+    n->n_chargeList = (Charge *) NULL;
+.
+77,78c
+    register Node *n;
+    register HashEntry *h;
+.
+56a
+/* The following hash table is used to match pairs of transistors in cMOS
+ * transmission gates.
+ */
+
+static HashTable pairTable;
+.
+25c
+extern char *NextField(), *NextFieldComma(), *PrintFET();
+.
+23a
+extern float PrintUnits, Vdd, Vinv;
+.
+21d
+10a
+#include <ctype.h>
+.
+w
+q
+-*-END-*-
+ed - check.c << '-*-END-*-'
+435,436c
+	    (void) sprintf(ratioString, "pullup = 1/%.1f, pulldown = 1/%.1f",
+		1 / loadSize, 1 / newSize);
+.
+224a
+int
+LogicalRelation(node1, node2)
+Node *node1, *node2;		/* nodes to test. */
+
+/*--------------------------------------------------------
+ *	This routine checks to see if it can find a logical 
+ *	relationship between the two specified nodes.
+ *
+ *	Results:
+ *		-1	if no relationship can be found.
+ *		0	if the two nodes are logically equivalent
+ *		1	if the two nodes are inverses.
+ *
+ *	Side Effects:	None.
+ *---------------------------------------------------------
+ */
+
+{
+    Node *inv1Chain[20], *inv2Chain[20];
+    register int inv1size, inv2size;
+    register int i, j;
+
+    /* If nodes are the same, we know the logical relation. */
+
+    if (node1 == node2)
+	return 0;
+
+    inv1Chain[0] = node1;
+    inv2Chain[0] = node2;
+    inv1size = FindInvertChain(inv1Chain, 20);
+    inv2size = FindInvertChain(inv2Chain, 20);
+		    
+    /* Look for a match between the two lists. */
+		    
+    for (i = 0; i <= inv1size; i += 1)
+	for (j = 0; j <= inv2size; j += 1)
+	    if (inv1Chain[i] == inv2Chain[j])
+		return ((i&1) != (j&1));
+
+    /* No relationship found. */
+
+    return -1;
+}
+
+
+.
+217a
+
+        /* Check any nodes precharged by this node. */
+
+	for (c = n->n_chargeList; c != NULL; c = c->c_next)
+	{
+	    n1 = c->c_node;
+
+	    /* Search the transistors driving the node to be charged. */
+
+	    count = 0;
+	    for (p = n1->n_pointer; p != NULL; p = p->p_next)
+	    {
+		f = p->p_fet;
+		if ((f->f_source == n1) && (f->f_flags & FET_FLOWFROMDRAIN))
+		    n2 = f->f_drain;
+		else if ((f->f_drain == n1)
+		    && (f->f_flags & FET_FLOWFROMSOURCE))
+		    n2 = f->f_source;
+		else continue;
+		if (!(n2->n_flags & (NODE0ALWAYS|NODE1ALWAYS))) continue;
+		if (f->f_flags & (FET_ONALWAYS|FET_FORCEDON))
+		{
+		    msg10 += 1;
+		    if (msg10 <= CheckMsgLimit)
+			printf("Found load on pre%scharged node %s\n\t%s\n",
+			    c->c_flags == NODEISPRECHARGED ? "" : "dis",
+			    PrintNode(n1), PrintFET(f));
+		    else skipped += 1;
+		    if (msg10 == CheckMsgLimit)
+		    {
+			printf("    No more of these messages");
+			printf(" will be printed.\n");
+		    }
+		    continue;
+		}
+		i = LogicalRelation(f->f_gate, n);
+		if ((i == 0) && (f->f_flags & FET_ON1))
+		    count += 1;
+		if ((i == 1) && (f->f_flags & FET_ON0))
+		    count += 1;
+	    }
+	    if (count == 0)
+	    {
+		msg10 += 1;
+		if (msg10 <= CheckMsgLimit)
+		{
+		    printf("No pre%scharging transistor for %s",
+			c->c_flags == NODEISPRECHARGED ? "" : "dis",
+			PrintNode(n1));
+		    printf(" on %s\n", PrintNode(n));
+		}
+		else skipped += 1;
+		if (msg10 == CheckMsgLimit)
+		    printf("    No more of these messages will be printed.\n");
+	    }
+	}
+.
+180a
+
+		/* If transistor is nspass, npass, or ppass and there is no
+		 * partner transistor, it means that this was a user-specifed
+		 * attribute.  Warn the designer that he has done this. */
+
+		if ((f->f_typeIndex == FET_NSPASS)
+		    || (f->f_typeIndex == FET_NPASS)
+		    || (f->f_typeIndex == FET_PPASS))
+		    if (f->f_partner == NULL)
+		    {
+			msg7 += 1;
+			if (msg7 <= CheckMsgLimit)
+			    printf("Warning: no partner for %s: %s\n",
+				TypeTable[f->f_typeIndex].t_name, PrintFET(f));
+			else skipped += 1;
+			if (msg7 == CheckMsgLimit)
+			{
+			    printf("    No more of these messages");
+			    printf("will be printed.\n");
+			}
+		    }
+
+		/* If this is part of a complementary pass transistor, 
+		 * find inverter chains based on the two gates.  See if we
+		 * can find a logical relationship between the two gates.
+		 * (Note that we just check the n-transistor to avoid
+		 * reporting each error twice.)  */
+		 
+		if ((f->f_typeIndex == FET_NPASS)
+		    && (f->f_partner != NULL))
+		{
+		    i = LogicalRelation(n, f->f_partner->f_gate);
+		    if (i == -1)
+		    {
+			msg8 += 1;
+			if (msg8 <= CheckMsgLimit)
+			{
+			    printf("Cannot find logical inversion between ");
+			    printf("complementary pass transistors:\n");
+			    printf("	n-channel: %s\n", PrintFET(f));
+			    printf("	p-channel: %s\n",
+			        PrintFET(f->f_partner));
+			}
+			else skipped += 1;
+			if (msg8 == CheckMsgLimit)
+			{
+			    printf("    No more of these messages");
+			    printf(" will be printed.\n");
+			}
+		    }
+		    else if (i != 1)
+		    {
+			msg9 += 1;
+			if (msg9 <= CheckMsgLimit)
+			{
+			    printf("Gates of complementary pass transistors ");
+			    printf("are logically equivalent:\n");
+			    printf("	n-channel: %s\n", PrintFET(f));
+			    printf("	p-channel: %s\n",
+			        PrintFET(f->f_partner));
+			}
+			else skipped += 1;
+			if (msg9 == CheckMsgLimit)
+			{
+			    printf("    No more of these messages");
+			    printf(" will be printed.\n");
+			}
+		    }
+		}
+.
+120c
+		if (!(f->f_flags &
+		    (FET_FLOWFROMSOURCE|FET_FLOWFROMDRAIN|FET_OFFALWAYS)))
+.
+118c
+		/* If transistor can't flow at all, error (unless it is
+		 * always off). */
+.
+72c
+    msg1 = msg2 = msg3 = msg4 = msg5 = msg6 = msg7 = msg8 = msg9 = msg10 = 0;
+    skipped = 0;
+.
+70c
+    int drives, driven, msg1, msg2, msg3, msg4, msg5, msg6, msg7,
+	msg8, msg9, msg10, skipped;
+    int i, j, count;
+.
+68a
+    register Charge *c;
+.
+67c
+    register Node *n, *n1;
+    Node *n2;
+.
+62a
+ *	7. User-specified transistor types of NPASS, PPASS, or NSPASS
+ *	   with no partner.
+ *	8. Complementary pass transistors whose inputs are logically
+ *	   identical.
+ *	9. Complementary pass transistors whose inputs are not
+ *	   clearly inverses.
+ *	10. Specification of precharged nodes which are not precharged as
+ *	   specified.
+.
+23a
+extern Type TypeTable[];
+.
+w
+q
+-*-END-*-
+ed - clear.c << '-*-END-*-'
+48c
+	n->n_flags &= ~(NODE0ALWAYS|NODE1ALWAYS|NODEINPATH|NODEISPRECHARGED|
+			NODEISPREDISCHARGED|NODEISWATCHED|NODERATIOERROR);
+.
+w
+q
+-*-END-*-
+ed - commands.c << '-*-END-*-'
+610a
+/*---------------------------------------------------------
+ *	This routine is the action routine for MarkDynamicCmd
+ *	to set a node to a specified value.
+ *
+ *	Results:	None.
+ *
+ *	Side effects:
+ *	The indicated node is set to the indicated value.
+ *---------------------------------------------------------
+ */
+{
+    MarkNodeLevel(node, value, TRUE);
+}
+
+.
+609a
+
+static MarkDynamicNode(node, value)
+Node *node;				/* node to set */
+.
+601,603c
+	ExpandNode(arg, &NodeTable, MarkDynamicNode, val);
+.
+582a
+    int MarkDynamicNode();
+.
+580d
+318,319c
+	if (!tty && !initflag)
+	    printf(": %s\n", line);
+	CmdDo(line, initflag);
+.
+269a
+int initflag;		/* TRUE if reading initialization file. */
+.
+268c
+Command(f, initflag)
+.
+263c
+	if (!initflag)
+	    printf("%s\n", RunStatsSince());
+.
+246a
+		    printf("Adjusting clock capacitance...\n");
+		    MarkClock();
+.
+223a
+	if (initflag && (class != CLASS_ANYTIME) && (class != CLASS_MODEL))
+	{
+	    printf("Cannot execute %s in initialization file.\n", cmd);
+	    return;
+	}
+.
+191a
+int initflag;		/* TRUE if executed during initialization. */
+.
+190c
+CmdDo(line, initflag)
+.
+175a
+    CLASS_ANYTIME,		/* prnodes */
+.
+173a
+    CLASS_ANYTIME,		/* prdelay */
+.
+113c
+    SourceCmd,			/* source */
+.
+106a
+    PrNodeCmd,			/* prnodes */
+.
+104a
+    PrintDelay,			/* prdelay */
+.
+79,80c
+    SpiceCmd(), MarkFlow(), MarkClock(), Check(), Stats(), TransistorCmd(),
+    QuitCmd(), PrFETsCmd(), PrNodeCmd(), RecomputeCmd(), AliasCmd(),
+.
+75,76c
+    SourceCmd(), DPrint(), ModelSet(), ClearCmd(),
+    PrintCap(), OptionCmd(), BuildCmd(), RatioCmd(), PrintDelay(),
+.
+57a
+    "prnodes node node ...",
+.
+55a
+    "prdelay [-g file] [-t threshold(ns)] node node ...",
+.
+19c
+extern char *RunStats(), *NextField();
+.
+w
+q
+-*-END-*-
+ed - crystal.h << '-*-END-*-'
+340a
+#define TYPE_OFFALWAYS 010
+.
+331a
+ * TYPE_OFFALWAYS:	TRUE means fet is treated as a transistor which is
+ *			always off.  Currently used only for FET_PFEED.
+.
+229a
+/* The following data structure is used to record nodes which are
+ * precharged or predischarged.  A list whose listhead is n_chargeList
+ * is maintained in each Node structure.  It points to a linked list of
+ * Charge structures.  Each structure contains the flags (precharged or
+ * predischarged) to set and the node being precharged or predischarged.
+ */
+
+typedef struct c1 {
+    struct n1 * c_node;		/* Node in question. */
+    int c_flags;		/* NODEISPRECHARGED or NODEISPREDISCHARGED. */
+    struct c1 * c_next;		/* Pointer to next charge entry. */
+    } Charge;
+
+.
+169a
+#define FET_OFFALWAYS 010
+.
+146a
+ * FET_OFFALWAYS:	A copy of the TYPE_OFFALWAYS bit for the fet.
+.
+134a
+#define FET_lastSystem 12
+
+.
+133a
+#define FET_NCLOAD 7
+#define FET_PLOAD 8
+#define FET_NPASS 9
+#define FET_PPASS 10
+#define FET_PFEED 11
+#define FET_NSPASS 12
+.
+124a
+ * FET_NCLOAD:	CMOS n-channel device being used as a pull-down load in
+ *		a static CMOS circuit.
+ * FET_PLOAD:	CMOS p-channel device being used as a pull-up load in a
+ *		static CMOS circuit.
+ * FET_NPASS:	CMOS n-channel device being used along with FET_PPASS in
+ *		a complementary CMOS transmission gate
+ * FET_PPASS:	CMOS p-channel device being used along with FET_NPASS in
+ *		a complementary CMOS transmission gate
+ * FET_PFEED:	CMOS p-channel device being used as a feedback transistor
+ *		in a single-transistor pass gate configuration (Crystal will
+ *		model this transistor as always-off -- it is used as a flag
+ *		by the designer to the presense of this configuration).
+ * FET_NSPASS:	CMOS n-channel device being used with FET_PFEED as part
+ *		of a single-transistor transmission gate.
+.
+107a
+    struct f1 *f_partner;	/* Connects npass/ppass, nspass/pfeed. */
+.
+91a
+#define NODERESISTSET 010000
+#define NODEISCLOCK 020000
+#define NODEISCLOCKNOT 040000
+#define NODECLOCKADJUST 0100000
+.
+77a
+ *  NODERESISTSET means that the user has specified (via an attribute) a
+ *	specific resistance for this node and all extractor-generated
+ *	resistances should be ignored.
+ *  NODEISCLOCK means that the user has specified (via an attribute) that
+ *	this is a clock line which is positive-true.  This is also used
+ *	to specify a duty percentage.
+ *  NODEISCLOCKNOT is similar to NODEISCLOCK except that the clock is
+ *	negative-true.
+ *  NODECLOCKADJUST means that the capacitive adjustment required for the
+ *	clock line has been performed.
+.
+43a
+    float n_clockDuty;		/* Duty percentage of qualified clock line.
+				 * Set from 'clock' or 'clocknot' attribute.
+				 */
+    struct c1 * n_chargeList;	/* List of nodes precharged or predischarged
+				 * from this node. */
+.
+w
+q
+-*-END-*-
+ed - delay.c << '-*-END-*-'
+760a
+}
+
+
+DelaySetNode(n, Times)
+Node *n;			/* Node to set */
+float Times[2];			/* High and low times */
+
+/*---------------------------------------------------------
+ *	This procedure is the action routine for DelaySetFromString.
+ *	It calls DelayPropagate.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	Delay information gets propagated through the network.
+ *--------------------------------------------------------
+ */
+
+{
+    Stage stage;
+
+    stage.st_prev = NULL;
+    stage.st_piece1Size = 0;
+    stage.st_piece2Size = 1;
+    stage.st_piece2Node[0] = n;
+    stage.st_piece2FET[0] = NULL;
+    if (Times[0] >= 0.0)
+    {
+	stage.st_time = Times[0];
+	stage.st_rise = TRUE;
+	stage.st_edgeSpeed = 0;
+	if (Times[0] > n->n_hiTime) n->n_hiTime = Times[0];
+	DelayPropagate(&stage);
+    }
+    if (Times[1] >= 0.0)
+    {
+	stage.st_time = Times[1];
+	stage.st_rise = FALSE;
+	stage.st_edgeSpeed = 0;
+	if (Times[1] > n->n_loTime) n->n_loTime = Times[1];
+	DelayPropagate(&stage);
+    }
+.
+733,757c
+    ExpandNode(name, &NodeTable, DelaySetNode, Times);
+.
+727c
+    if (sscanf(string, "%99s %f %f", name, &Times[0], &Times[1]) != 3)
+.
+724,725c
+    float Times[2];
+    int DelaySetNode();
+.
+722d
+613c
+	if (f->f_flags &
+	    (FET_ONALWAYS|FET_OFFALWAYS|FET_FORCEDON|FET_FORCEDOFF))
+	    continue;
+.
+585,586c
+	(NODEISINPUT|NODEISBUS|NODEISPRECHARGED|NODEISPREDISCHARGED))
+	|| ((node->n_C >= DelayBusThreshold)
+	&& (!(node->n_flags & (NODEISCLOCK|NODEISCLOCKNOT)))))
+.
+565c
+    if (DelayPrintAll || (DelayPrint && isUserNode(node)))
+.
+489c
+	if (f->f_flags & (FET_FORCEDOFF|FET_OFFALWAYS)) continue;
+.
+340c
+	if (f->f_flags & (FET_FORCEDOFF|FET_OFFALWAYS)) continue;
+.
+325c
+	|| ((node->n_C >= DelayBusThreshold)
+	&& (!(node->n_flags & (NODEISCLOCK|NODEISCLOCKNOT)))))
+.
+164c
+	if (f->f_flags & (FET_FORCEDOFF|FET_OFFALWAYS)) continue;
+.
+123c
+	|| ((node->n_C >= DelayBusThreshold)
+	&& (!(node->n_flags & (NODEISCLOCK|NODEISCLOCKNOT)))))
+.
+34,35c
+extern char *RunStats(), *PrintNode(), *NextField();
+.
+w
+q
+-*-END-*-
+ed - dprint.c << '-*-END-*-'
+535c
+	    DPrintGraphics(file, crit);
+.
+531c
+	file = fopen(graphicsFile, "w");
+.
+529c
+    if (graphicsFile != NULL)
+.
+517c
+    if ((textFile != NULL) || ((graphicsFile == NULL) && (spiceFile == NULL)))
+.
+492c
+		graphicsFile = p;
+.
+471c
+    textFile = graphicsFile = spiceFile = NULL;
+.
+465c
+    char *graphicsFile, *spiceFile, *textFile;
+.
+309c
+ *	A collection of commands is generated to highlight
+.
+303,304c
+ *	This procedure generates commands for various layout editors
+ *	to identify a delay path.
+.
+298,299c
+DPrintGraphics(file, stage)
+FILE *file;			/* Where to print graphic commands. */
+.
+18c
+extern char *PrintNode(), *NextField();
+.
+w
+q
+-*-END-*-
+ed - expand.c << '-*-END-*-'
+190,196c
+	    else
+		(*coroutine)(value, arg);
+.
+185,188c
+	    if (value == NULL)
+	    {
+		if (! ExpandNoError)
+		    printf("%s isn't in table!\n", name);
+.
+176,182d
+171,172c
+	    HashStartSearch(&hs);
+	    count = 0;
+	    while (TRUE)
+	    {
+		h = HashNext(table, &hs);
+		if (h == NULL) break;
+		value = HashGetValue(h);
+		if (value == NULL) continue;
+		if (strcmp(name+1, h->h_name) == 0)
+		{
+		    count++;
+		    (*coroutine)(value, arg);
+		}
+		else
+		    for (p = h->h_name; *p != '\0'; p++)
+			if ((*p == '/') && (strcmp(name, p) == 0))
+			{
+			    (*coroutine)(value, arg);
+			    count++;
+			    break;
+			}
+	    }
+	    if ((count == 0) && ! ExpandNoError)
+		printf("No such nodes \"%s\"\n", name);
+.
+166,169c
+	    if ((count == 0) && ! ExpandNoError)
+		printf("No such nodes \"%s\"\n", name);
+	}
+	else if (name[0] == '/')
+.
+163,164c
+		if (value == NULL) continue;
+		if (match(name+1, h->h_name))
+		{
+		    count++;
+		    (*coroutine)(value, arg);
+		}
+.
+125,157c
+    
+	*np = '\0';
+	if (name[0] == '*')
+	{
+	    HashStartSearch(&hs);
+	    count = 0;
+.
+110,123c
+		while (TRUE)
+		{
+		    (void) sprintf(name, "%s%d%s", prefix, next, pattern);
+		    ExpandNode(name, table, coroutine, arg);
+		    if (next == last) break;
+		    else if (next > last) next -= 1;
+		    else next += 1;
+		}
+		return;
+	    }
+	    *np++ = *pattern;
+	    *p++ = *pattern++;
+.
+102,108c
+		/* Call ourselves recursively to process each sequential
+		 * substitution. */
+.
+98,100c
+	    if (*pattern == '\\')
+	    {
+		*p++ = '\\';
+		pattern++;
+		if (*pattern == '\0') break;
+	    }
+	    else if (*pattern == '<')
+	    {
+		*p = '\0';
+		if (sscanf(pattern, "<%d:%d>", &next, &last) != 2)
+		{
+		    printf("Bad pattern \"%s\", must be of form \"a<x:y>b\"\n",
+			string);
+		    return;
+		}
+		if ((next < 0) || (last < 0)) return;
+		while ((*pattern != 0) && (*pattern++ != '>'));
+.
+93,96c
+	    /* Skip quoted stuff. */
+.
+84,91c
+	pattern = string;
+	p = prefix;
+	np = name;
+	while (*pattern)
+.
+80,82c
+	/* Copy away the prefix. */
+.
+75,78c
+    while ((string = NextFieldComma(&argument)) != NULL)
+.
+73c
+    /* Process each list entry. */
+.
+70,71d
+66,68c
+    if (strlen(argument) > LENGTH)
+.
+62c
+    register char *pattern, *p, *np, *string;
+    char prefix[LENGTH+1], name[LENGTH+20];
+    int next, last, count;
+    HashEntry *h;
+    HashSearch hs;
+    char *value;
+.
+57c
+ *	More than one "<>" form may be present in the string.  They are
+ *	processed with the last occurence changing most rapidly.
+ *	In addition, the "*" and "<>" forms and the "/" and "<>"
+ *	forms may be combined.
+.
+54c
+ *	2. "*x":  in this case we'll return ALL nodes in
+ *	the database that contain the substring x.  This
+ *	may be slow since it involves a complete search.
+ *	Use backslash as a quote character to get a * as the 
+ *	first character of the name without special interpretation.
+ *	3. "/x": in this case we'll return ALL nodes in
+ *	the database that consist of some (possibly null) string
+ *	of pathnames followed by the string "x".  A backslash can be
+ *	used to get a / as the first character of the name without
+ *	special interpretation.
+ *	4. Strings not in the above categories:  they are
+.
+44,47c
+ *
+ *	1. "a<x:y>b":  in this case we'll generate several
+.
+42c
+ *	The coroutine is called for each match.  The pattern string
+ *	consists of a comma-separated list, each of whose elements
+.
+36,37c
+ *	This routine is given a pattern and a hash table to look it
+ *	up in.  For each match, the specified co-routine is called
+ *	with the first argument being the matching entry and the second
+ *	argument is as taken from the fourth argument to this routine.
+.
+32,33c
+ExpandNode(argument, table, coroutine, arg)
+char *argument;			/* Pattern string. */
+HashTable *table;		/* Hash table to use for expansions */
+int (*coroutine)();		/* Routine to call for each match */
+int arg;			/* Argument to pass to coroutine. */
+.
+30a
+int ExpandNoError = FALSE;		/* Set to TRUE to suppress 
+					 * "no such node" error message */
+.
+21,29d
+19a
+/* Imports from other crystal modules: */
+
+extern char *NextFieldComma();
+
+.
+w
+q
+-*-END-*-
+ed - flow.c << '-*-END-*-'
+203,211c
+	ExpandNode(p, &FlowTable, FlowNode, flags[index]);
+}
+
+FlowNode(fl, flags)
+Flow *fl;			/* flow entry to modify */
+
+/*--------------------------------------------------------
+ *	This routine is the action routine for FlowCmd.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	The specified attribute is set according to the keyword.  See
+ *	FlowCmd.
+ *--------------------------------------------------------
+ */
+
+{
+	fl->fl_flags &= ~(FL_INONLY | FL_OUTONLY | FL_IGNORE | FL_OFF);
+	fl->fl_flags |= flags;
+.
+191,198d
+175c
+    int index;
+    int FlowNode();
+.
+173c
+    static int flags[] = {FL_IGNORE, FL_INONLY, 0, FL_OFF, FL_OUTONLY};
+.
+32c
+ *	FlowLock sees if it is OK to pass through a transistor
+.
+22c
+extern char *NextField();
+.
+w
+q
+-*-END-*-
+ed - main.c << '-*-END-*-'
+167a
+}
+
+
+ProcessInitFile(name)
+char *name;			/* File name to read */
+
+/*---------------------------------------------------------
+ *	This routine processes a file containing commands to
+ *	be executed during initialization.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	The commands in the file are executed
+ *---------------------------------------------------------
+ */
+
+{
+    char newname[200];
+    char *p;
+    
+    p = newname;
+    if (ConvertTilde(&name, &p, 200))
+	Source(newname, TRUE);
+.
+106c
+    Command(stdin, FALSE);
+.
+102c
+	CmdDo(cmd, FALSE);
+.
+97c
+    /* Read initialization files, if present. */
+
+    ProcessInitFile("~cad/lib/.crystal");
+    ProcessInitFile("~/.crystal");
+    ProcessInitFile("./.crystal");
+
+    printf("Crystal, v.3\n");
+.
+15c
+extern char *PrintNode();
+.
+w
+q
+-*-END-*-
+ed - mark.c << '-*-END-*-'
+701c
+	    if (!(f->f_flags & (FET_FORCEDOFF|FET_OFFALWAYS))) goto nextNode;
+.
+663a
+MarkNode(n, value)
+Node *n;			/* Node to mark */
+int value;			/* New value for node */
+
+/*---------------------------------------------------------
+ *	This procedure is the action routine for MarkFromString.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	The node is set to the specified value.
+ *---------------------------------------------------------
+ */
+
+{
+    n->n_flags |= NODEISBUS;
+    MarkNodeLevel(n, value, TRUE);
+}
+
+
+.
+653,660c
+	ExpandNode(p, &NodeTable, MarkNode, value);
+.
+638c
+    int MarkNode();
+.
+580a
+markNodeNode(n, flags)
+Node *n;
+int flags;
+{
+    n->n_flags |= flags;
+}
+
+.
+574,578c
+	ExpandNode(p, &NodeTable, markNodeNode, flags);
+.
+571a
+    int markNodeNode();
+.
+570d
+551a
+ *	This procedure adjusts the capacitance of clock nodes
+ *	which drive qualified clocks through transmission gates.
+ *
+ *	It is common practice in cMOS to implement qualified
+ *	clocks as transmission gates.  There are two problems with
+ *	this in Crystal:
+ *
+ *	(1) When turning a clock off, the qualified clocks should
+ *	    also be shut off.  However, since Crystal cannot detect
+ *	    this, all the qualified clocks must be shut off manually
+ *	    when simulating the other clock phases of a circuit.
+ *	(2) Often, in a circuit involving regular structures, a large
+ *	    number of qualified clocks may be turned on.  Ignoring the
+ *	    contributions of their side-path capacitance on the clock
+ *	    line will often result in a huge underestimation of clock
+ *	    delays.
+ *
+ *	Crystal solves these problems by adding two node attributes:
+ *	"Clock" and "Notclock" which the designer may specify (along
+ *	with an optional duty percentage) for clock nodes.  These are
+ *	used in two ways to solve the above problems:
+ *
+ *	(1) When a node marked "clock" is set to 0 (or a node marked
+ *	    "notclock" is set to 1), and it can flow through a transistor
+ *	    to a node marked the same way, the signal setting propagates 
+ *	    through the transistor.
+ *
+ *	(2) For each node marked "clock" or "notclock", a search is made
+ *	    of all the qualified clocks it can drive.  The capacitances
+ *	    and designer-specified duty cycles are used to calculate the
+ *	    expected total capacitance, average capacitance, and expected
+ *	    number of driven lines.  If the number of lines driven is
+ *	    more than one and the expected capacitance is greater than
+ *	    the average capacitance, an adjustment is performed to the
+ *	    capacitance of the clock node by the expected capacitance.
+ *	    Note, however, that this will overestimate the capacitance
+ *	    on the clock line because branch capacitance will be counted
+ *	    twice when its path delay is calculated.  This is corrected 
+ *	    by assuming each branch capacitance is approximately equal
+ *	    and subtracting the average capacitance from the adjustment.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	The adjustments described above are done for all clock nodes.
+ *---------------------------------------------------------
+ */
+
+{
+    register Node *n;
+    
+    /* Adjust capacitance of all clock nodes that have not yet been
+     * adjusted. */
+
+    for (n = FirstNode; n != NULL; n = n->n_next)
+    {
+	if (!(n->n_flags & (NODEISCLOCK|NODEISCLOCKNOT))) continue;
+	if (!(n->n_flags & NODECLOCKADJUST))
+	    MarkAdjustClockNode(n);
+    }
+}
+
+
+MarkAdjustClockNode(n)
+register Node *n;
+
+/*---------------------------------------------------------
+ *	MarkAdjustClockNode performs the adjustment described above
+ *	for a single clock node.  It performs a depth-first search
+ *	to ensure that adjustments have been made for all connected
+ *	clocks by calling itself recusively.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	Each processed node has its adjustment flag set to prevent
+ *	multiple adjustments of the same node.
+ *---------------------------------------------------------
+ */
+
+{
+    register Pointer *p;
+    register FET *f;
+    register Node *n2;
+    int flag;
+    int numClocks = 0;
+    float expectedNumber = 0.0,
+	  expectedCapacitance = 0.0,
+	  totalCapacitance = 0.0;
+
+    /* Save our type of clock node.  Then scan all connected transistors
+     * looking for qualified clocks.  Accumulate expected number of "on"
+     * clocks, expected capacitance, and total connected capacitance (for
+     * computation of average).
+     */
+
+    flag = n->n_flags & (NODEISCLOCK|NODEISCLOCKNOT);
+    n->n_flags |= NODEINPATH;
+    for (p = n->n_pointer; p != NULL; p = p->p_next)
+    {
+	f = p->p_fet;
+	if (f->f_gate == n) continue;
+	if ((f->f_flags & FET_FLOWFROMSOURCE)
+	    && (f->f_flags & FET_FLOWFROMDRAIN))
+	{
+	    if (++MarkClockMsgs <= MarkClockLimit)
+	    {
+		printf("Bi-directional transistor between clock nodes:\n");
+		printf("	%s\n", PrintFET(f));
+		printf("Clock adjustment for %s incomplete.\n", PrintNode(n));
+		if (MarkClockMsgs == MarkClockLimit)
+		    printf("No more of these messages will be printed.\n");
+	    }
+	    continue;
+	}
+	if ((f->f_source == n)
+	    && (f->f_flags & FET_FLOWFROMSOURCE))
+	    n2 = f->f_drain;
+	else if ((f->f_drain == n)
+	    && (f->f_flags & FET_FLOWFROMDRAIN))
+	    n2 = f->f_source;
+	else continue;
+	
+	if (!(n2->n_flags & flag)) continue;
+	if (n2->n_flags & NODEINPATH)
+	{
+	    if (++MarkClockMsgs <= MarkClockLimit)
+	    {
+		printf("%s encountered twice when adjusting clocks.  Check ",
+		    PrintNode(n2));
+		printf("transistor flow directions\n");
+		if (MarkClockMsgs == MarkClockLimit)
+		    printf("No more of these messages will be printed.\n");
+	    }
+	}
+	if (!(n2->n_flags & NODECLOCKADJUST))
+	    MarkAdjustClockNode(n2);
+
+	numClocks += 1;
+	expectedNumber += n2->n_clockDuty;
+	expectedCapacitance += n2->n_clockDuty * n2->n_C;
+	totalCapacitance += n2->n_C;
+    }
+
+    /* If this adjustment is usefull, perform it.  In any case, show
+     * we have processed this node. */
+
+    if ((expectedNumber > 1.8)
+	&& (expectedCapacitance > 1.5 * (totalCapacitance / numClocks)))
+	n->n_C += expectedCapacitance - totalCapacitance / numClocks;
+    n->n_flags |= NODECLOCKADJUST;
+    n->n_flags &= ~NODEINPATH;
+}
+
+
+/*---------------------------------------------------------
+.
+550a
+MarkClock()
+
+.
+549c
+
+.
+500a
+	if (f->f_flags & FET_OFFALWAYS) continue;
+
+.
+327c
+	if (f->f_flags & (FET_FORCEDOFF|FET_OFFALWAYS)) continue;
+.
+213c
+	else if (((n2->n_flags & NODE1ALWAYS)
+	    && (f->f_flags & (FET_FORCEDON|FET_ONALWAYS)))
+	    || ((n2->n_flags & NODEISCLOCKNOT)
+	    && (node->n_flags & NODEISCLOCKNOT)))
+.
+205c
+	if (((n2->n_flags & NODE0ALWAYS)
+	    && (f->f_flags & (FET_FORCEDON|FET_ONALWAYS)))
+	    || ((n2->n_flags & NODEISCLOCK) && (node->n_flags & NODEISCLOCK)))
+.
+193d
+123,126c
+	    && (f->f_flags & FET_FLOWFROMDRAIN))
+	{
+	    if (f->f_flags & (FET_FORCEDON|FET_ONALWAYS))
+		checkNode(f->f_source);
+	    if (level && (node->n_flags & NODEISCLOCKNOT)
+		&& (f->f_source->n_flags & NODEISCLOCKNOT))
+		checkNode(f->f_source);
+	    if (level == 0 && (node->n_flags & NODEISCLOCK)
+		&& (f->f_source->n_flags & NODEISCLOCK))
+		checkNode(f->f_source);
+	}
+.
+119,121c
+	    && (f->f_flags & FET_FLOWFROMSOURCE))
+	{
+	    if (f->f_flags & (FET_FORCEDON|FET_ONALWAYS))
+		checkNode(f->f_drain);
+	    if (level && (node->n_flags & NODEISCLOCKNOT)
+		&& (f->f_drain->n_flags & NODEISCLOCKNOT))
+		checkNode(f->f_drain);
+	    if (level == 0 && (node->n_flags & NODEISCLOCK)
+		&& (f->f_drain->n_flags & NODEISCLOCK))
+		checkNode(f->f_drain);
+	}
+.
+115c
+	 * to the next node over.  It will propagate if the
+	 * transistor is always on or this is a clock-qualifying
+	 * transmission gate and the clock is being set off.
+.
+102a
+    /* If this node is being set off, go down its charge list and
+     * mark the appropriate nodes to be precharged or predischarged.
+     */
+
+    if (level == 0)
+	for (c = node->n_chargeList; c != NULL; c = c->c_next)
+	{
+	    if (MarkPrintAll || (MarkPrint && isUserNode(c->c_node)))
+		printf("Marking node as pre%scharged: %s.\n", 
+		    (c->c_flags == NODEISPRECHARGED ? "" : "dis"),
+		    PrintNode(c->c_node));
+	    c->c_node->n_flags |= c->c_flags;
+	}
+
+.
+100c
+    if (MarkPrintAll || (MarkPrint && isUserNode(node)))
+.
+72a
+    register Charge *c;
+.
+47a
+/* The following is used to avoid printing too many error message when 
+ * adjusting clocks.
+ */
+
+static int MarkClockMsgs = 0;
+static int MarkClockLimit = 20;
+.
+18,19c
+extern char *PrintNode(), *PrintFET(), *NextField();
+.
+w
+q
+-*-END-*-
+ed - misc.c << '-*-END-*-'
+435a
+
+int
+ConvertTilde(psource, pdest, size)
+char **psource;			/* Pointer to a pointer to the source string */
+char **pdest;			/* Pointer to a ptr to dest string area. */
+int size;			/* Number of bytes available at pdest */
+
+/*-------------------------------------------------------------------
+ * ConvertTilde --
+ *	This routine converts tilde notation into standard directory names.
+ *
+ * Results:
+ *	If the conversion was done successfully, then the return value
+ *	is the number of bytes of space left in the destination area.
+ *	If a user name couldn't be found in the password file, then
+ *	-1 is returned.
+ *
+ * Side Effects:
+ *	If the first character of the string indicated by psource is a
+ *	tilde ("~") then the subsequent user name is converted to a login
+ *	directory name and stored in the string indicated by dest.  Then
+ *	remaining characters in the file name at psource are copied to
+ *	pdest (the file name is terminated by white space, a null character,
+ *	or a colon) and psource is updated.  Upon return, psource points
+ *	to the terminating character in the source file name, and pdest
+ *	points to the null character terminating the expanded name.
+ *	If a tilde cannot be converted because the user name cannot
+ *	be found, psource is still advanced past the current entry, but
+ *	nothing	is stored at the destination.  At most size characters
+ *	(including the terminating null character) will be stored at pdest.
+ *	Note:  the name "~" with no user name expands to the home directory.
+ *-------------------------------------------------------------------
+ */
+
+{
+    register char *ps, *pd;
+    struct passwd *passwd, *getpwnam();
+    char userName[100], *string, *newEntry;
+    int i, length;
+
+    size -= 1;
+    ps = *psource;
+    if (*ps == '~')
+    {
+	/* Strip off the login name from the front of the file name. */
+
+	pd = userName;
+	for (i=0; ; i++)
+	{
+	    *pd = *++ps;
+	    if (isspace(*pd) || (*pd=='\0') || (*pd=='/') || (*pd==':'))
+		break;
+	    if (i < 99) pd++;
+	}
+	*pd = '\0';
+
+	/* Look up this name in the password file.  If the name is "~", then
+	 * just use the home directory.
+	 */
+
+	if (strcmp(userName, "") == 0) string = getenv("HOME");
+	else
+	{
+	    passwd = getpwnam(userName);
+	    if (passwd != NULL) string = passwd->pw_dir;
+	    else string = NULL;
+	}
+	if (string == NULL)
+	{
+	    /* No login entry.  Skip the rest of the file name. */
+
+	    while ((*ps != '\0') && !isspace(*ps) && (*ps != ':')) ps++;
+	    *psource = ps;
+	    return -1;
+	}
+
+	length = strlen(string);
+	if (length > size) length = size;
+	(void) strncpy(*pdest, string, length+1);
+	size -= length;
+	pd = *pdest+length;
+    }
+    else
+    {
+	/* No tilde to expand.  As a minor convenience, check to see
+	 * if the first two characters of the name are "./".  If so,
+	 * then just skip over them.
+	 */
+
+	while (ps[0] == '.')
+	{
+	    if (ps[1] == '/') ps += 2;
+	    else
+	    {
+		if ((ps[1] == 0) || (ps[1] == ':') || isspace(ps[1]))
+		    ps += 1;
+		break;
+	    }
+	}
+        pd = *pdest;
+    }
+
+    /* Copy the rest of the directory name from the source to the dest. */
+
+    while ((*ps != '\0') && !isspace(*ps) && (*ps != ':'))
+	if (size > 0)
+	{
+	    *pd++ = *ps++;
+	    size--;
+	}
+	else ps++;
+    *pd = 0;
+    *psource = ps;
+    *pdest = pd;
+    return size;
+}
+
+Node *
+FindInvert(n)
+Node *n;			/* Node which is potential output. */
+
+/*----------------------------------------------------------
+ *	FindInvert looks for an inverter whose output is the specified
+ *	node.  An inverter is defined as exactly one pullup and exactly
+ *	one pulldown.  If either the pullup or pulldown are not always on,
+ *	their gates must be the same (cMOS).
+ *
+ *	Results:
+ *	If an inverter is found, the gate of the inverter is returned.
+ *	Otherwise, NULL is returned.
+ *
+ *	Side Effects:	None
+ *----------------------------------------------------------
+ */
+
+{
+    register Pointer *p;
+    register FET *f;
+    int gotPullDown, gotPullUp;
+    register Node *gate, *other;
+    
+    gotPullDown = gotPullUp = FALSE;
+    gate = NULL;
+    
+    /* Scan all transistors whose drain or source terminal are this node.
+     * If it is neither a pullup or pulldown, this is not an inverter output.
+     * Otherwise, check for multiple pullups, etc.  */
+
+    for (p = n->n_pointer; p != NULL; p = p->p_next)
+    {
+	f = p->p_fet;
+	if (f->f_flags & (FET_FORCEDOFF|FET_OFFALWAYS)) continue;
+	if ((f->f_source == n) && (f->f_flags & FET_FLOWFROMDRAIN))
+	    other = f->f_drain;
+	else if ((f->f_drain == n) && (f->f_flags & FET_FLOWFROMSOURCE))
+	    other = f->f_source;
+	else continue;
+
+	if (other->n_flags & NODE1ALWAYS)
+	{
+	    if (gotPullUp) return((Node *) NULL);
+	    gotPullUp = TRUE;
+	    if (!(f->f_flags & (FET_ONALWAYS|FET_FORCEDON)))
+	    {
+		if (!(f->f_flags & FET_ON0)) return((Node *) NULL);
+		if ((gate != NULL) && (gate != f->f_gate))
+		    return((Node *) NULL);
+		gate = f->f_gate;
+	    }
+	}
+	else if (other->n_flags & NODE0ALWAYS)
+	{
+	    if (gotPullDown) return((Node *) NULL);
+	    gotPullDown = TRUE;
+	    if (!(f->f_flags & (FET_ONALWAYS|FET_FORCEDON)))
+	    {
+		if (!(f->f_flags & FET_ON1)) return((Node *) NULL);
+		if ((gate != NULL) && (gate != f->f_gate))
+		    return((Node *) NULL);
+		gate = f->f_gate;
+	    }
+	}
+	else return((Node *) NULL);
+    }
+    
+    /* If we have both a pullup and pulldown, then this is a valid inverter
+     * if it has a gate. */
+
+    if (gotPullUp && gotPullDown)
+	return(gate);
+    else
+        return((Node *) NULL);
+}
+
+
+int
+FindInvertChain(nodeList, listSize)
+Node *nodeList[];		/* List of nodes in chain. */
+int listSize;			/* Maximum size of chain. */
+
+/*--------------------------------------------------------
+ *	FindInvertChain finds a chain of inverters starting from
+ *	nodeList[0].  It fills the list with the gates of inverters
+ *	whose output is the previous entry.  When an inverter cannot
+ *	be found or the list is full, it returns.
+ *
+ *	Results:	The number of inverters in the chain (possibly
+ *			zero) is returned.
+ *
+ *	Side Effects:	None.
+ *-------------------------------------------------------
+ */
+
+{
+    register int chainSize;
+    
+    chainSize = 0;
+    while ((chainSize < listSize)
+	&& ((nodeList[chainSize+1] = FindInvert(nodeList[chainSize])) != NULL))
+	chainSize += 1;
+
+    return(chainSize);
+}
+
+
+.
+264a
+ *	This routine tests a node name to see if it is an
+ *	internal name or a user name.  We find the last component
+ *	in the path name and see if the first character is alphabetic.
+ *
+ *	Results:	Returns TRUE if the name is a user-specified
+ *			name; otherwise, returns FALSE.
+ *
+ *	Side Effects:	None.
+ *---------------------------------------------------------
+ */
+
+{
+    register char *p, *lastcomp;
+
+    p = node->n_name;
+
+    /* Find the start of the last component. */
+
+    lastcomp = p;
+    for (; *p != '\0'; p++)
+	if (*p == '/') lastcomp = p + 1;
+
+    return isalpha(*lastcomp);
+}
+
+
+/*---------------------------------------------------------
+.
+263a
+isUserNode(node)
+Node *node;
+
+.
+132a
+static SetResNode(n, value)
+Node *n;				/* Node to set resistance for */
+float value;				/* New resistance for node */
+
+/*---------------------------------------------------------
+ *	This routine is the action routine for SetResNode.
+ *
+ *	Results:	None
+ *
+ *	Side Effects:
+ *	The resistance of the named node is set to the specified value.
+ *----------------------------------------------------------
+ */
+
+{
+    n->n_R = value;
+}
+
+
+.
+125,129c
+	ExpandNode(p, &NodeTable, SetResNode, value);
+.
+115c
+    int SetResNode();
+.
+95a
+static SetCapNode(n, value)
+Node *n;			/* Node to set capacitance for */
+float value;			/* New capacitance value */
+
+/*--------------------------------------------------------
+ *	This routine is the action routine for SetCap.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	The capacitance of the named node is set to the specified value.
+ *--------------------------------------------------------
+ */
+
+{
+    n->n_C = value;
+}
+
+
+.
+88,92c
+	ExpandNode(p, &NodeTable, SetCapNode, value);
+.
+78c
+    int SetCapNode();
+.
+54c
+    Command(f, initflag);
+.
+51c
+	if (!initflag)
+	    printf("Couldn't find file %s.\n", string);
+.
+38a
+    Source(name, FALSE);
+}
+
+Source(name, initflag)
+char *name;			/* File from which to read commands. */
+int initflag;			/* TRUE if processing initialization file. */
+
+{
+.
+24c
+SourceCmd(name)
+.
+19d
+15a
+extern char *strcpy(), *strncpy(), *index(), *sprintf();
+extern char *rindex(), *getenv();
+
+/* Imports from other Crystal modules: */
+
+.
+14c
+/* Library routines: */
+.
+10a
+#include <pwd.h>
+.
+6c
+ * This file contains miscellaneous routines for Crystal.
+.
+w
+q
+-*-END-*-
+ed - model.c << '-*-END-*-'
+719a
+		else if (strcmp(fieldValue, "never") == 0)
+		    type->t_flags = TYPE_OFFALWAYS;
+.
+523a
+    else if (type->t_flags & TYPE_OFFALWAYS) printf("on=never");
+.
+229a
+	TypeTable[FET_NCLOAD].t_upOutES[i] = 0;
+	TypeTable[FET_PLOAD].t_downOutES[i] = 0;
+	TypeTable[FET_NPASS].t_upOutES[i] = 0;
+	TypeTable[FET_PPASS].t_downOutES[i] = 0;
+	TypeTable[FET_PFEED].t_upOutES[i] = 0;
+	TypeTable[FET_PFEED].t_downOutES[i] = 0;
+.
+228d
+225a
+    t = &(TypeTable[FET_NCHAN]);
+    t->t_upESRatio[0]=0;	t->t_upREff[0]=67400;	t->t_upOutES[0]=239.8;
+    t->t_upESRatio[1]=.014;	t->t_upREff[1]=74400;	t->t_upOutES[1]=238.4;
+    t->t_upESRatio[2]=.103;	t->t_upREff[2]=162000;	t->t_upOutES[2]=302.4;
+    t->t_upESRatio[3]=.825;	t->t_upREff[3]=796200;	t->t_upOutES[3]=1214.6;
+    t->t_upESRatio[4]=6.457;	t->t_upREff[4]=5156200;
+							t->t_upOutES[4]=6987.2;
+    t->t_upESRatio[5]= -1;
+
+    t->t_downESRatio[0]=0;	t->t_downREff[0]=10400;	t->t_downOutES[0]=4.2;
+    t->t_downESRatio[1]=.116;	t->t_downREff[1]=11200;	t->t_downOutES[1]=4.2;
+    t->t_downESRatio[2]=.406;	t->t_downREff[2]=13800;	t->t_downOutES[2]=4.4;
+    t->t_downESRatio[3]=.749;	t->t_downREff[3]=16200;	t->t_downOutES[3]=4.6;
+    t->t_downESRatio[4]=1.480;	t->t_downREff[4]=20400;	t->t_downOutES[4]=5.6;
+    t->t_downESRatio[5]=2.944;	t->t_downREff[5]=26200;	t->t_downOutES[5]=7.2;
+    t->t_downESRatio[6]=5.877;	t->t_downREff[6]=33600;	t->t_downOutES[6]=10.0;
+    t->t_downESRatio[7]=24.421;	t->t_downREff[7]=52800;	t->t_downOutES[7]=22.4;
+    t->t_downESRatio[8]=195.4;	t->t_downREff[8]=54400;	t->t_downOutES[8]=83.2;
+    t->t_downESRatio[9]= -1;
+
+    t = &(TypeTable[FET_PCHAN]);
+    t->t_upESRatio[0]=0;	t->t_upREff[0]=25200;	t->t_upOutES[0]=11.4;
+    t->t_upESRatio[1]=.148;	t->t_upREff[1]=27600;	t->t_upOutES[1]=11.4;
+    t->t_upESRatio[2]=.914;	t->t_upREff[2]=39900;	t->t_upOutES[2]=12.6;
+    t->t_upESRatio[3]=1.812;	t->t_upREff[3]=50100;	t->t_upOutES[3]=14.7;
+    t->t_upESRatio[4]=3.610;	t->t_upREff[4]=65700;	t->t_upOutES[4]=18.6;
+    t->t_upESRatio[5]=14.39;	t->t_upREff[5]=121500;	t->t_upOutES[5]=35.4;
+    t->t_upESRatio[6]=58.46;	t->t_upREff[6]=247500;	t->t_upOutES[6]=80.1;
+    t->t_upESRatio[7]=225.0;	t->t_upREff[7]=531600;	t->t_upOutES[7]=191.7;
+    t->t_upESRatio[8]= -1;
+    
+    t->t_downESRatio[0]=0;	t->t_downREff[0]=54800;	t->t_downOutES[0]=55.4;
+    t->t_downESRatio[1]=.018;	t->t_downREff[1]=55800;	t->t_downOutES[1]=55.2;
+    t->t_downESRatio[2]=.251;	t->t_downREff[2]=81400;	t->t_downOutES[2]=58.4;
+    t->t_downESRatio[3]=.993;	t->t_downREff[3]=155600;
+							t->t_downOutES[3]=110;
+    t->t_downESRatio[4]=3.964;	t->t_downREff[4]=375000;
+							t->t_downOutES[4]=332;
+    t->t_downESRatio[5]=15.49;	t->t_downREff[5]=1060300;
+							t->t_downOutES[5]=1186;
+    t->t_downESRatio[6]= -1;
+    
+    t = &(TypeTable[FET_NCLOAD]);
+    t->t_downESRatio[0]=0;	t->t_downREff[0]=8300;	t->t_downOutES[0]=4.2;
+    t->t_downESRatio[1]=.381;	t->t_downREff[1]=8500;	t->t_downOutES[1]=4.2;
+    t->t_downESRatio[2]=.750;	t->t_downREff[2]=9200;	t->t_downOutES[2]=4.3;
+    t->t_downESRatio[3]=1.487;	t->t_downREff[3]=10700;	t->t_downOutES[3]=4.9;
+    t->t_downESRatio[4]=2.957;	t->t_downREff[4]=13000;	t->t_downOutES[4]=6.3;
+    t->t_downESRatio[5]=12.273;	t->t_downREff[5]=20500;	t->t_downOutES[5]=13.4;
+    t->t_downESRatio[6]=98.12;	t->t_downREff[6]=36500;	t->t_downOutES[6]=62.2;
+    
+    t = &(TypeTable[FET_PLOAD]);
+    t->t_upESRatio[0]=0;	t->t_upREff[0]=21700;	t->t_upOutES[0]=11.2;
+    t->t_upESRatio[1]=.617;	t->t_upREff[1]=22100;	t->t_upOutES[1]=11.3;
+    t->t_upESRatio[2]=1.228;	t->t_upREff[2]=24500;	t->t_upOutES[2]=11.6;
+    t->t_upESRatio[3]=2.449;	t->t_upREff[3]=29100;	t->t_upOutES[3]=14.1;
+    t->t_upESRatio[4]=9.922;	t->t_upREff[4]=42600;	t->t_upOutES[4]=29.5;
+    t->t_upESRatio[5]=39.687;	t->t_upREff[5]=54100;	t->t_upOutES[5]=84.6;
+    t->t_upESRatio[6]=76.314;	t->t_upREff[6]=52900;	t->t_upOutES[6]=162.9;
+    t->t_upESRatio[7]= -1;
+
+    t = &(TypeTable[FET_NPASS]);
+    t->t_downESRatio[0]=0;	t->t_downREff[0]=7200;	t->t_downOutES[0]=3.6;
+    t->t_downESRatio[1]=.165;	t->t_downREff[1]=8400;	t->t_downOutES[1]=3.8;
+    t->t_downESRatio[2]=.750;	t->t_downREff[2]=12200;	t->t_downOutES[2]=4.4;
+    t->t_downESRatio[3]=1.221;	t->t_downREff[3]=14400;	t->t_downOutES[3]=5.2;
+    t->t_downESRatio[4]=2.396;	t->t_downREff[4]=18200;	t->t_downOutES[4]=7.0;
+    t->t_downESRatio[5]=9.441;	t->t_downREff[5]=22600;	t->t_downOutES[5]=14.4;
+    t->t_downESRatio[6]=37.592;	t->t_downREff[6]= -25400;
+							t->t_downOutES[6]=32.2;
+    t->t_downESRatio[7]=150.22;	t->t_downREff[7]= -391500;
+							t->t_downOutES[7]=79.4;
+    t->t_downESRatio[8]=586.0;	t->t_downREff[8]= -2235600;
+							t->t_downOutES[8]=195;
+    t->t_downESRatio[9]= -1;
+
+    t = &(TypeTable[FET_PPASS]);
+    t->t_upESRatio[0]=0;	t->t_upREff[0]=18800;	t->t_upOutES[0]=11.2;
+    t->t_upESRatio[1]=.153;	t->t_upREff[1]=21600;	t->t_upOutES[1]=11.2;
+    t->t_upESRatio[2]=.373;	t->t_upREff[2]=26400;	t->t_upOutES[2]=12.0;
+    t->t_upESRatio[3]=.698;	t->t_upREff[3]=32000;	t->t_upOutES[3]=13.2;
+    t->t_upESRatio[4]=1.137;	t->t_upREff[4]=37600;	t->t_upOutES[4]=14.8;
+    t->t_upESRatio[5]=4.418;	t->t_upREff[5]=49200;	t->t_upOutES[5]=24.4;
+    t->t_upESRatio[6]=17.587;	t->t_upREff[6]= -18500;	t->t_upOutES[6]=52.0;
+    t->t_upESRatio[7]=70.333;	t->t_upREff[7]= -584000;
+							t->t_upOutES[7]=126.0;
+    t->t_upESRatio[8]=281.123;	t->t_upREff[8]= -3570000;
+							t->t_upOutES[8]=320.0;
+    t->t_upESRatio[9]= -1;
+    
+    t = &(TypeTable[FET_NSPASS]);
+    t->t_upESRatio[0]=0;	t->t_upREff[0]=77400;	t->t_upOutES[0]=143.4;
+    t->t_upESRatio[1]=.038;	t->t_upREff[1]=81800;	t->t_upOutES[1]=152.4;
+    t->t_upESRatio[2]=.070;	t->t_upREff[2]=108600;	t->t_upOutES[2]=150.4;
+    t->t_upESRatio[3]=.222;	t->t_upREff[3]=189200;	t->t_upOutES[3]=160.4;
+    t->t_upESRatio[4]=.871;	t->t_upREff[4]=431600;	t->t_upOutES[4]=160.4;
+    t->t_upESRatio[5]=13.886;	t->t_upREff[5]=2896000;	t->t_upOutES[5]=132.0;
+    t->t_upESRatio[6]= -1;
+    
+    t->t_downESRatio[0]=0;	t->t_downREff[0]=12400;	t->t_downOutES[0]=5.6;
+    t->t_downESRatio[1]=.078;	t->t_downREff[1]=13000;	t->t_downOutES[1]=5.4;
+    t->t_downESRatio[2]=.715;	t->t_downREff[2]=20000;	t->t_downOutES[2]=6.2;
+    t->t_downESRatio[3]=1.162;	t->t_downREff[3]=23800;	t->t_downOutES[3]=7.2;
+    t->t_downESRatio[4]=2.277;	t->t_downREff[4]=30800;	t->t_downOutES[4]=9.6;
+    t->t_downESRatio[5]=8.972;	t->t_downREff[5]=52000;	t->t_downOutES[5]=22.0;
+    t->t_downESRatio[6]=35.768;	t->t_downREff[6]=84200;	t->t_downOutES[6]=60.6;
+    t->t_downESRatio[7]=298.8;	t->t_downREff[7]=182800;
+							t->t_downOutES[7]=265;
+    t->t_downESRatio[8]= -1;
+
+.
+139c
+    for (j=0; j < curNTypes; j++)
+.
+61c
+int curNTypes = 13;
+.
+58,59c
+    {TYPE_ON1, 2, 8, "nchan", .00069, .00052, 67400, 10400, 0, 'n'},
+    {TYPE_ON0, 4, 1, "pchan", .00069, .00040, 25200, 54800, 1, 'p'},
+    {TYPE_ONALWAYS, 0, 4, "ncload", .00069, .00052, 0, 8300, 0, 'n'},
+    {TYPE_ONALWAYS, 3, 0, "pload", .00069, .00040, 21700, 0, 1, 'p'},
+    {TYPE_ON1, 0, 9, "npass", .00069, .00052, 0, 7200, 0, 'n'},
+    {TYPE_ON0, 7, 0, "ppass", .00069, .00040, 18800, 0, 1, 'p'},
+    {TYPE_OFFALWAYS, 0, 0, "pfeed", .00069, .00040, 0, 0, 1, 'p'},
+    {TYPE_ON1, 5, 8, "nspass", .00069, .00052, 77400, 12400, 0, 'n'}
+.
+56c
+    {TYPE_ONALWAYS, 2, 0, "nload", .00015, .00025, 22000, 0, 2, 'd'},
+.
+w
+q
+-*-END-*-
+ed - nextfield.c << '-*-END-*-'
+47a
+    if (*p1 != 0) *p1++ = 0;
+    *p = p1;
+    if (*p2 == 0) return NULL;
+    else return p2;
+}
+
+char *
+NextFieldComma(p)
+char **p;			/* A pointer to a string pointer.*/
+
+/*---------------------------------------------------------
+ *	This procedure picks arguments off of strings.
+ *	The string pointed to indirectly by p is assumed
+ *	to consist of zero or more fields separated by
+ *	commas.
+ *
+ *	Results:
+ *	The return value is a pointer to the first character
+ *	of the first field of the string.  NULL is returned
+ *	if there are no fields left in the string.
+ *
+ *	Side Effects:
+ *	The pointer p is updated to refer to the next field after
+ *	one returned.  The string is modified by replacing the
+ *	comma after the first field with a zero character.
+ *---------------------------------------------------------
+ */
+
+{
+    register char *p1;
+    register char *p2;
+
+    p2 = p1 = *p;
+
+    while ((*p1 != 0) && (*p1 != ',')) p1 += 1;
+.
+38c
+    register char *p2;
+.
+12a
+
+.
+6c
+ * This file contains two routines used for parsing strings
+.
+w
+q
+-*-END-*-
+ed - print.c << '-*-END-*-'
+419,447c
+	ExpandNode(s, &NodeTable, PrFETsNode, 0);
+}
+
+static PrFETsNode(n, dummy)
+Node *n;
+{
+
+    FET *f;
+    Pointer *p;
+    FPointer *fp;
+
+    for (p = n->n_pointer; p != NULL; p = p->p_next)
+    {
+	f = p->p_fet;
+	if (f->f_gate != n) continue;
+	printf("%s, aspect=1/%.2f area=%.1f\n", PrintFET(f),
+	    1 / f->f_aspect, f->f_area/(PrintUnits*PrintUnits));
+	printf("    Type = %s", TypeTable[f->f_typeIndex].t_name);
+	if (f->f_flags & FET_FLOWFROMSOURCE)
+	    printf(", flowFromSource");
+	if (f->f_flags & FET_FLOWFROMDRAIN)
+	    printf(", flowFromDrain");
+	if (f->f_flags & FET_FORCEDON) printf(", forcedOn");
+	if (f->f_flags & FET_FORCEDOFF) printf(", forcedOff");
+	if (f->f_flags & FET_ONALWAYS) printf(", onAlways");
+	if (f->f_flags & FET_OFFALWAYS) printf(", offAlways");
+	if (f->f_flags & FET_ON0) printf(", on0");
+	if (f->f_flags & FET_ON1) printf(", on1");
+	if (f->f_flags & FET_NOSOURCEINFO)
+	    printf(", noSourceInfo");
+	if (f->f_flags & FET_NODRAININFO)
+	    printf(", noDrainInfo");
+	for (fp = f->f_fp; fp != NULL; fp = fp->fp_next)
+	    printf(", %sFlow = %s",
+		fp->fp_flags == FP_SOURCE ? "source" : "drain",
+		fp->fp_flow->fl_name);
+	if (f->f_flags & FET_SPICE)
+	    printf(", spice");
+	printf("\n");
+.
+414a
+    int PrFETsNode();
+.
+411,413d
+394a
+static PrintNodeNode(n, type)
+register Node *n;			/* Node to print information about */
+int type;				/* Type of information to print */
+
+/*---------------------------------------------------------
+ *	This routine is the action routine for PrintCap, PrintRes,
+ *	and PrintDelay.  It prints the resistance, capacitance, or delay
+ *	of a node if it is above the threshold and the value being printed
+ *	has been printed less times than the repeat limit.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	The information is printed and the repeat count for the
+ *	value is incremented in the local hash table.
+ *--------------------------------------------------------
+ */
+
+{
+    float value, x, y;
+    char text[20], label[50];
+    char *terminal, *direction;
+    HashEntry *h;
+    int i;
+    static char *(IntFmt[]) = {"%.3f", "%.0f", "%.3f"};
+    static char *(PrintFmt[]) =
+	{"%s pf capacitance at %s.\n", "%s ohms resistance at %s.\n"};
+
+    switch (type)
+    {
+	case PRINT_CAP:
+	    value = n->n_C;
+	    break;
+	case PRINT_RES:
+	    value = n->n_R;
+	    break;
+	case PRINT_DELAY:
+	    value = n->n_hiTime;
+	    direction = "rises";
+	    if (value < n->n_loTime)
+	    {
+		value = n->n_loTime;
+		direction = "falls";
+	    }
+	    break;
+    }
+    if (value < threshold) return;
+    (void) sprintf(text, IntFmt[type], value);
+    h = HashFind(&ht, text);
+    i = (int) HashGetValue(h) + 1;
+    HashSetValue(h, i);
+    if (i > RepeatLimit)
+	nDups += 1;
+    else if (file == NULL)
+	if (type == PRINT_DELAY)
+	    printf("%s %s at %sns\n", PrintNode(n), direction, text);
+	else
+	    printf(PrintFmt[type], text, PrintNode(n));
+    else
+    {
+	PrintNodeXY(n, &terminal, &x, &y);
+	if (type == PRINT_DELAY)
+	    sprintf(label, "%s=%s%s@%sns", n->n_name, terminal,
+		direction, text);
+	else
+	    sprintf(label, "%s=%s:%s%s", n->n_name, terminal, text,
+		type == PRINT_CAP ? "pf" : "ohms");
+	GrPrint(file, x, y, 2.0, 2.0, label);
+    }
+}
+
+
+.
+360,381c
+	ExpandNode(p, &NodeTable, PrintNodeNode, type);
+.
+313a
+
+PrintDelay(string)
+char *string;		/* Describes what nodes to print. */
+
+/*---------------------------------------------------------
+ *	This routine prints out all nodes with whose delay
+ *	is greater than a given threshold.  String contains switches (-g for
+ *	graphics command file, -t for threshold value, default 0) followed by
+ *	an optional list of nodes.  If no nodes are specified, than "*"
+ *	is used.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	Stuff is output on stdout, and perhaps also to a graphics
+ *	command file.
+ *---------------------------------------------------------
+ */
+
+{
+    PrintNodeValue(string, PRINT_DELAY);
+}
+
+
+PrintNodeValue(string, type)
+char *string;				/* Describes what node to print */
+int type;				/* What type of data to print */
+
+/*---------------------------------------------------------
+ *	This routine prints out the resistance, capacitance, or
+ *	delay for a set of nodes.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:
+ *	Stuff is output on stdout, and perhaps also to a graphics
+ *	command file.
+ *---------------------------------------------------------
+ */
+
+{
+    register char *p;
+    int PrintNodeNode();
+
+.
+306,312c
+    PrintNodeValue(string, PRINT_RES);
+}
+.
+300c
+ *	Stuff is output on stdout, and perhaps also to a graphics
+.
+293c
+ *	contains switches (-g for graphics command file, -t for
+.
+198,283c
+    PrintNodeValue(string, PRINT_CAP);
+.
+192c
+ *	Stuff is output on stdout, and perhaps also to a graphics
+.
+185c
+ *	contains switches (-g for graphics command file, -t for
+.
+178a
+PrNodeCmd(string)
+char *string;				/* contains a list of nodes to print */
+
+/*---------------------------------------------------------
+ *	This routine simply prints the names (in standard
+ *	Crystal form) of the listed nodes.
+ *
+ *	Results:	None.
+ *
+ *	Side Effects:	The named nodes are printed.
+ *---------------------------------------------------------
+ */
+
+{
+    register char *p;
+    extern int ExpandNoError;
+    int PrNode();
+
+    for ( ; isspace(*string); string++) /* do nothing */;
+    if (*string == 0) string = "*";
+
+    ExpandNoError = TRUE;
+    while ((p = NextField(&string)) != NULL)
+	ExpandNode(p, &NodeTable, PrNode, 0);
+    ExpandNoError = FALSE;
+}
+
+static PrNode(node)
+Node *node;
+
+{
+	printf("%s\n", PrintNode(node));
+}
+
+
+
+/* Define static variables used by the combined action routines for
+ * PrintCap, PrintRes, and PrintDelay. */
+
+static HashTable ht;
+static float threshold;
+static int nDups;
+static FILE *file;
+
+/* Define output types */
+
+#define PRINT_CAP	0
+#define PRINT_RES	1
+#define PRINT_DELAY	2
+
+.
+21d
+w
+q
+-*-END-*-
+ed - rcmodel.c << '-*-END-*-'
+98c
+     * is supplying the signal (either the last node in piece1, or
+.
+w
+q
+-*-END-*-
+ed - spice.c << '-*-END-*-'
+652c
+    fprintf(spiceFile, ".plot tran V(%d) (0,%.1f)\n", i|1, Vdd);
+.
+641,642c
+    if (s->st_rise) fprintf(spiceFile, "0 %.1f 0ns 0ns 0ns)\n", Vdd);
+    else fprintf(spiceFile, "%.1f 0 0ns 0ns 0ns)\n", Vdd);
+.
+628c
+	    fprintf(spiceFile, ".ic v(%d)=%.1f\n", i|1, initValueTable[i|1]);
+.
+624,626c
+	if (!outputNode[i]) continue;
+	fprintf(spiceFile, ".ic v(%d)=%.1f\n", i, initValueTable[i]);
+.
+599a
+	if (triggerPartner[i] && gNum < 2)
+	{
+	    /* This gate is not driven and would normally be tied to
+	     * Vdd or GND.  Make a voltage-controlled-voltage source
+	     * for this node.  We already know it is in the table. */
+
+	    if (gNum < 0)
+		printf("Crystal bug: lost SPICE node");
+
+	    gNum = (int) HashGetValue(HashFind(&spiceNodeTable,
+		f->f_gate->n_name));
+	    gNum2 = getSpiceNum(f->f_partner->f_gate);
+	    fprintf(spiceFile, "E%d %d 0 %d 0 %.1f -1\n",
+		vsourceNum++, gNum, gNum2|1, Vdd);
+	}
+.
+597c
+	    printf("Crystal bug: lost SPICE node");
+.
+593c
+	   printf("Crystal bug: lost SPICE node");
+.
+584c
+	int sNum, dNum, gNum, gNum2;
+.
+577,579c
+     * force the transistor on.  Also, use the appropriate node
+     * for body bias.
+     *
+     * If this is the partner to a trigger NPASS/PPASS transistor,
+     * and it is not driver by any other part of the stage, we will
+     * need to model the behavior of its gate.  For now, we will do this
+     * by constructing a voltage-controlled-voltage source and have it
+     * transit the same way as the gate of the trigger transistor.  
+     * eventually, we should try to chase down this gate to some point
+     * in the path (same with superbuffer gates).
+.
+572c
+    /* Now output the transistors.  There are some tricks here, too.
+.
+519,520c
+	if (!outputNode[i]) continue;
+.
+492a
+    lastUnresolvedFETs = -1;
+    do
+    {
+	unresolvedFETs = 0;
+	for (i=0;  i<nSpiceFets;  i++)
+	{
+	    f = spiceFetTable[i];
+	    if (triggerPartner[i])
+	    {
+		j = (int) HashGetValue(HashFind(&spiceNodeTable, 
+		    f->f_gate->n_name));
+		outputNode[j] = TRUE;
+		outputNode[j|1] = TRUE;
+	    }
+	    if (sourceNode[i] == (Node *) NULL)
+	    {
+		if (hasDriver[(int) HashGetValue(HashFind(&spiceNodeTable,
+		    f->f_source->n_name))])
+		    sourceNode[i] = f->f_source;
+		else if (hasDriver[(int) HashGetValue(HashFind(&spiceNodeTable,
+		    f->f_drain->n_name))])
+		    sourceNode[i] = f->f_drain;
+		else
+		{
+		    unresolvedFETs += 1;
+		    continue;
+		}
+	    }
+	    if (f->f_source == sourceNode[i]) node = f->f_drain;
+	    else node = f->f_source;
+	    j = (int) HashGetValue(HashFind(&spiceNodeTable, node->n_name));
+	    if (j == 0) continue;
+	    hasDriver[j] = TRUE;
+	    hasDriver[j|1] = TRUE;
+	    outputNode[j] = TRUE;
+	    outputNode[j|1] = TRUE;
+	}
+	if (lastUnresolvedFETs == unresolvedFETs)
+	{
+	    /* We haven't converged.  Say something. */
+
+	    printf("Can't find flow direction of the following.");
+	    printf("  Check pairing of nearby FETs:\n");
+	    for (i =0;  i<nSpiceFets; i++)
+	    	if (sourceNode[i] == (Node *) NULL)
+			printf("\t%s\n", PrintFET(spiceFetTable[i]));
+	    break;
+	}
+	lastUnresolvedFETs = unresolvedFETs;
+    } while (unresolvedFETs != 0);
+
+.
+469,479c
+    for (i=0;  i<=nodeNum;  i++) hasDriver[i] = FALSE, outputNode[i] = FALSE;
+.
+466c
+     * driven.  We also fingure out which nodes we will be using.  These
+     * are the driven nodes plus any nodes which are gates of partners of
+     * trigger transistors.
+     *
+     * One major complication is that there may be transistors which are the
+     * partners of transmission gates for which we don't yet know which way
+     * information flows.  We will deduce the flow through each such
+     * transistor when we find one terminal which has a driver.  If the
+     * pass transistors are properly paired, this will eventually resolve
+     * all such transistors.
+.
+436c
+		saveFET(f, other, FALSE);
+.
+387c
+	    saveFET(s->st_piece1FET[i], s->st_piece1Node[i], (i == 0));
+.
+382c
+	    saveFET(s->st_piece2FET[i], s->st_piece2Node[i], FALSE);
+.
+368a
+    vsourceNum = 1;
+    initValueTable[0] = 0.0;
+    initValueTable[1] = Vdd;
+.
+354a
+    int unresolvedFETs, lastUnresolvedFETs;
+.
+349c
+    int i, j, capNum, resNum, fetNum, vsourceNum, overallDriver;
+.
+305c
+    gotPath: saveFET(f, next, (f->f_gate == trigger));
+.
+287c
+	    ((next->n_C >= DelayBusThreshold) &&
+	    (!(next->n_flags & (NODEISCLOCK|NODEISCLOCKNOT)))))
+.
+155a
+    if ((fet->f_partner != NULL) && ! (fet->f_partner->f_flags & FET_SPICE))
+    {
+	if ((fet->f_typeIndex == FET_NPASS) || (fet->f_typeIndex == FET_PPASS))
+	{
+	    /* We must save the partner FET.  The problem is that unless the
+	     * source or destination of our signal is a source/drain
+	     * terminal of our partner we have no way to find out what the
+	     * signal source of our partner is.  So mark it as NULL and
+	     * try to figure it out when we are all done.
+	     */
+
+	    if ((source == fet->f_partner->f_source)
+		|| (source == fet->f_partner->f_drain))
+		saveFET(fet->f_partner, source, FALSE);
+	    else
+	    {
+	    	register Node *other;
+		
+		if (source == fet->f_source) other = fet->f_drain;
+		else other = fet->f_source;
+		if (other == fet->f_partner->f_source)
+		    saveFET(fet->f_partner, fet->f_partner->f_drain, FALSE);
+		else if (other == fet->f_partner->f_drain)
+		    saveFET(fet->f_partner, fet->f_partner->f_source, FALSE);
+		else
+		    saveFET(fet->f_partner, (Node *) NULL, FALSE);
+	    }
+	    saveNode(fet->f_partner->f_source, initValueTable[
+		(int) HashGetValue(HashFind(&spiceNodeTable,
+		fet->f_source->n_name))]);
+	    saveNode(fet->f_partner->f_drain, initValueTable[
+		(int) HashGetValue(HashFind(&spiceNodeTable,
+		fet->f_drain->n_name))]);
+	    if (istrigger)
+	    {
+		triggerPartner[nSpiceFets-1] = TRUE;
+		saveNode(fet->f_partner->f_gate, 
+		    (fet->f_partner->f_flags & FET_ON1) ? 0 : Vdd);
+	    }
+	}
+	else if (fet->f_typeIndex == FET_NSPASS)
+	    saveFET(fet->f_partner, Vdd, FALSE);
+    }
+.
+154a
+    triggerPartner[nSpiceFets] = FALSE;
+.
+136a
+ *
+ *	If this transistor has a partner, it is also saved.  If this is
+ *	a trigger NPASS or PPASS transistor, the partner's transistor is
+ *	flagged for special handling and the gate is saved.
+.
+125a
+int istrigger;			/* Flags a trigger transistor. */
+.
+123c
+saveFET(fet, source, istrigger)
+.
+62a
+static int outputNode[SPICEMAXNODES];		/* TRUE means we'll be using
+						 * this node number. */
+.
+46a
+static int triggerPartner[SPICEMAXFETS];	/* Records, for each FET,
+						 * whether this is the partner
+						 * of a trigger NPASS/PPASS
+						 * transistor. */
+.
+w
+q
+-*-END-*-

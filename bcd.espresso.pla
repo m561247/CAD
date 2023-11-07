@@ -1,0 +1,36 @@
+# number of inputs, B0 to B3
+# number of outputs, a to g
+# type of PLA file (f: full product terms, r: reduced to prime implicants if possible)
+# input labels
+# output labels
+# 0
+# 1
+# 2
+# 3
+# 4
+# 5
+# 6
+# 7
+# 8
+# 9
+# Invalid input
+# Invalid input
+# Invalid input
+# Invalid input
+# Invalid input
+# Invalid input
+.i 4
+.o 7
+.ilb B0 B1 B2 B3
+.ob a b c d e f g
+.p 9
+0-00 0100010
+0-11 1110000
+01-0 0010011
+-000 1001100
+0-10 1001100
+-00- 0110000
+001- 0101001
+100- 1001011
+0101 1011011
+.e

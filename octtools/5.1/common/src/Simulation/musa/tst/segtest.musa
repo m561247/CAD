@@ -1,0 +1,45 @@
+!
+! Test script for musa
+!
+mv a A<3:0>
+mv b B<3:0>
+mv c C<3:0>
+mv net aNet bNet cNet dNet eNet fNet gNet
+mv net1 aNet1 bNet1 cNet1 dNet1 eNet1 fNet1 gNet1
+mv net2 aNet2 bNet2 cNet2 dNet2 eNet2 fNet2 gNet2
+
+macro test
+	set a $1
+	set b $1
+	set c $1
+	ev
+	show "%x %x %x" net net1 net2
+	verify net $2
+	verify net1 $2
+	verify net2 $2
+	sleep 400
+$end
+
+lopen segtest.out
+setplot seg
+plot seg A<3> A<2> A<1> A<0>
+test h0 h7e
+test h1 h30
+test h2 h6d
+test h3 h79
+test h4 h33
+test h5 h5b
+test h6 h1f
+test h7 h70
+test h8 h7f
+test h9 h73
+test ha h0d
+test hb h19
+test hc h23
+test hd h4b
+test he h0f
+test hf h00
+! dpl seg
+lclose
+sleep 2000     ! Sleep for a short while.
+quit

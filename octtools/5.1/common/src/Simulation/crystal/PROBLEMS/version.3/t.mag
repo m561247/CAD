@@ -1,0 +1,147 @@
+magic
+tech scmos
+timestamp 544399560
+<< polysilicon >>
+rect -25 37 -22 39
+rect -19 37 -17 39
+rect 54 37 57 39
+rect 60 37 62 39
+rect -25 4 -23 37
+rect -8 9 -6 11
+rect -4 9 -2 11
+rect 0 9 2 11
+rect 4 9 6 11
+rect 8 9 10 11
+rect 12 9 14 11
+rect 16 9 18 11
+rect 20 9 22 11
+rect 24 9 26 11
+rect 28 9 30 11
+rect 32 9 34 11
+rect 36 9 38 11
+rect 40 9 42 11
+rect -8 4 -6 6
+rect -4 4 -2 6
+rect 0 4 2 6
+rect 4 4 6 6
+rect 8 4 10 6
+rect 12 4 14 6
+rect 16 4 18 6
+rect 20 4 22 6
+rect 24 4 26 6
+rect 28 4 30 6
+rect 32 4 34 6
+rect 36 4 38 6
+rect 40 4 42 6
+rect 54 4 56 37
+rect -25 2 -22 4
+rect -19 2 -17 4
+rect 54 2 57 4
+rect 60 2 62 4
+<< ndiffusion >>
+rect -18 6 -8 9
+rect -6 6 -4 9
+rect -2 6 0 9
+rect 2 6 4 9
+rect 6 6 8 9
+rect 10 6 12 9
+rect 14 6 16 9
+rect 18 6 20 9
+rect 22 6 24 9
+rect 26 6 28 9
+rect 30 6 32 9
+rect 34 6 36 9
+rect 38 6 40 9
+rect 42 6 44 9
+rect -22 4 -19 5
+rect 57 4 60 5
+rect -22 0 -19 2
+rect 57 0 60 2
+<< pdiffusion >>
+rect -22 39 -19 41
+rect 57 39 60 41
+rect -22 36 -19 37
+rect 57 36 60 37
+<< metal1 >>
+rect -31 41 -22 45
+rect -18 41 57 45
+rect 61 41 70 45
+rect -31 40 70 41
+rect -31 6 -29 10
+rect -21 9 -18 32
+rect 58 24 61 32
+rect 58 21 68 24
+rect 48 6 50 10
+rect 58 9 61 21
+rect -31 0 70 1
+rect -31 -4 -22 0
+rect -18 -4 57 0
+rect 61 -4 70 0
+<< polycontact >>
+rect -29 6 -25 10
+rect 50 6 54 10
+<< ndcontact >>
+rect -35 6 -31 10
+rect -22 5 -18 9
+rect 44 6 48 10
+rect 57 5 61 9
+rect -22 -4 -18 0
+rect 57 -4 61 0
+<< pdcontact >>
+rect -22 41 -18 45
+rect 57 41 61 45
+rect -22 32 -18 36
+rect 57 32 61 36
+<< ntransistor >>
+rect -8 6 -6 9
+rect -4 6 -2 9
+rect 0 6 2 9
+rect 4 6 6 9
+rect 8 6 10 9
+rect 12 6 14 9
+rect 16 6 18 9
+rect 20 6 22 9
+rect 24 6 26 9
+rect 28 6 30 9
+rect 32 6 34 9
+rect 36 6 38 9
+rect 40 6 42 9
+rect -22 2 -19 4
+rect 57 2 60 4
+<< ptransistor >>
+rect -22 37 -19 39
+rect 57 37 60 39
+<< labels >>
+rlabel polysilicon -7 10 -7 10 5 ga
+rlabel polysilicon -3 10 -3 10 5 gb
+rlabel polysilicon 1 10 1 10 5 gc
+rlabel polysilicon 5 10 5 10 5 gd
+rlabel polysilicon 9 10 9 10 5 ge
+rlabel polysilicon 13 10 13 10 5 gf
+rlabel polysilicon 17 10 17 10 5 gg
+rlabel polysilicon 21 10 21 10 5 gh
+rlabel polysilicon 25 10 25 10 5 gi
+rlabel polysilicon 29 10 29 10 5 gj
+rlabel polysilicon 33 10 33 10 5 gk
+rlabel polysilicon 37 10 37 10 5 gl
+rlabel polysilicon 41 10 41 10 5 gm
+rlabel ndiffusion -9 7 -9 7 5 na
+rlabel ndiffusion -5 7 -5 7 5 nb
+rlabel ndiffusion -1 7 -1 7 5 nc
+rlabel ndiffusion 3 7 3 7 5 nd
+rlabel ndiffusion 7 7 7 7 5 ne
+rlabel ndiffusion 11 7 11 7 5 nf
+rlabel ndiffusion 15 7 15 7 5 ng
+rlabel ndiffusion 19 7 19 7 5 nh
+rlabel ndiffusion 23 7 23 7 5 ni
+rlabel ndiffusion 27 7 27 7 5 nj
+rlabel ndiffusion 31 7 31 7 5 nk
+rlabel ndiffusion 35 7 35 7 5 nl
+rlabel ndiffusion 39 7 39 7 5 nm
+rlabel metal1 66 23 66 23 7 inv.out
+rlabel metal1 49 8 49 8 1 inv.in
+rlabel metal1 -19 13 -19 13 1 i2
+rlabel metal1 -30 8 -30 8 3 i1
+rlabel metal1 6 42 6 42 5 Vdd!
+rlabel metal1 4 -2 4 -2 1 GND!
+<< end >>

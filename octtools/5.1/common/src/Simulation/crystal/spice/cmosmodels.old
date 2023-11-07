@@ -1,0 +1,21 @@
+SPICE deck for Crystal
+
+* Device models for CMOS and Vdd and Vbb.
+
+.model  nmo  nmos level=2  vto=0.5  lambda=0.01 
++  uo=475  phi=0.5
++  cgso=1.3e-10  cgdo=1.3e-10  cgbo=4.10e-10  rsh=40  cj=6e-4
++  cjsw=4e-10  js=3.5e-5  tox=5.5e-8  nsub=5e15  nss=-2.8e11  nfs=1e10
++  xj=6e-7  ld=4e-7  ucrit=8e4  uexp=0.25  utra=0.25  vmax=5e4
++  mj = 0.5 mjsw = 0.5 pb = 0.7 neff = 2.5
+
+.model  pmo  pmos  level=2  vto=-0.5 lambda=0.01
++  uo=190  phi=0.492
++  cgso=1.3e-10  cgdo=1.3e-10  cgbo=4.10e-10  rsh=40  cj=4.1e-4
++  cjsw=2.5e-10  js=3.5e-5  tox=5.5e-8  nsub=3e14  nss=11.7e11  nfs=1e10
++  xj=6e-7  ld=4e-7  ucrit=8e4  uexp=0.25  utra=0.25  vmax=5e4
++  mj = 0.5 mjsw = 0.5 pb = 0.7 neff = 2.5
+.OPTIONS NOMOD
+.WIDTH out=80
+VDD 1 0 5
+VBB 2 0 0

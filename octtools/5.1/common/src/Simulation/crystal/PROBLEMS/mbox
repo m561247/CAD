@@ -1,0 +1,853 @@
+From mak@rosemary.Berkeley.EDU Mon Jul 27 21:32:49 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA07053; Mon, 27 Jul 87 21:32:48 PDT
+Received: by rosemary.Berkeley.EDU (5.57/1.25)
+	id AA13409; Mon, 27 Jul 87 21:32:39 PDT
+Date: Mon, 27 Jul 87 21:32:39 PDT
+From: mak@rosemary.berkeley.edu (Jacky Chi-Fai Mak)
+Message-Id: <8707280432.AA13409@rosemary.Berkeley.EDU>
+To: fwo@ginger.Berkeley.EDU
+Subject: Crystal Recompilation
+Status: RO
+
+
+Would you recompile crystal on eros? The version on eros does not simulate
+a circuit with more than 5 transistors in series. But on the SPUR CPU 
+which I am running crystal on, there are several places with more than 5
+transistors in series. I copied the crystal source code directory from 
+envy-150 to my home directory on eros and recompiled, but it did not work.
+Please recompile ASAP! We definitely are running out of time.
+
+							Thanks,
+								Jacky
+
+From fwo@chilli.Berkeley.EDU Tue Jul 28 17:27:27 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA26432; Tue, 28 Jul 87 17:27:25 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA13445; Tue, 28 Jul 87 17:27:22 PDT
+Date: Tue, 28 Jul 87 17:27:22 PDT
+From: fwo@chilli.berkeley.edu (Fred W. Obermeier)
+Message-Id: <8707290027.AA13445@chilli.Berkeley.EDU>
+To: mak@rosemary.Berkeley.EDU
+Subject: I think it is fixed.
+Cc: fwo@chilli.Berkeley.EDU
+Status: RO
+
+
+The newly compiled version seems to work now:
+~cad/new/crystal.tape/crystal /eros2/daebum/Magic/hpchip.sim
+[6:38.5u 0:26.4s 13747k]
+: stat 
+Number of nodes: 42802.
+Number of transistors: 109941.
+Number of distinct flows: 7.
+Number of nodes set to 0: 0.
+Number of nodes set to 1: 0.
+Number of dynamic memory nodes: 0.
+Number of simulation search calls: 0.
+Number of flow search calls: 0.
+Number of calls to chase Vdd or GND: 0.
+Number of calls to chase gates: 0.
+Number of calls to chase loads: 0.
+Number of calls to propagate delays: 0.
+Number of delay feedback paths: 0.
+Number of calls to DPRecord for arbitrary nodes: 0
+Number of calls to DPRecord for memory nodes: 0.
+Number of calls to DPRecord for watched nodes: 0.
+Number of duplicates eliminated: 0
+[0:00.0u 0:00.0s 13756k]
+
+But the old versions seem to work too:
+~cad/bin/crystal /eros2/daebum/Magic/hpchip.sim
+Crystal, v.2
+: build /eros2/daebum/Magic/hpchip.sim
+[6:44.4u 0:35.1s 13747k]
+: stat
+Number of nodes: 42802.
+Number of transistors: 109941.
+Number of distinct flows: 7.
+Number of nodes set to 0: 0.
+Number of nodes set to 1: 0.
+Number of dynamic memory nodes: 0.
+Number of simulation search calls: 0.
+Number of flow search calls: 0.
+Number of calls to chase Vdd or GND: 0.
+Number of calls to chase gates: 0.
+Number of calls to chase loads: 0.
+Number of calls to propagate delays: 0.
+Number of delay feedback paths: 0.
+Number of calls to DPRecord for arbitrary nodes: 0
+Number of calls to DPRecord for memory nodes: 0.
+Number of calls to DPRecord for watched nodes: 0.
+Number of duplicates eliminated: 0
+[0:00.0u 0:00.0s 13756k]
+
+BUT: for long transistor chains:
+See ~cad/src/crystal.tape/crystal.problems/t.sim for a long transistor
+chain test example:
+~cad/new/crystal ~cad/src/crystal.tape/crystal.problems/t.sim < \
+	~cad/src/crystal.tape/crystal.problems/t.cr.in
+Crystal, v.2
+: build /cad/src/crystal.tape/crystal.problems/t.sim
+[0:00.0u 0:00.0s 25k]
+: cap 1 inv.in
+[0:00.0u 0:00.0s 34k]
+: cap 10 inv.out
+[0:00.0u 0:00.0s 34k]
+: delay i1 0 0
+Marking transistor flow...
+Setting Vdd to 1...
+Setting GND to 0...
+(30 stages examined.)
+[0:00.0u 0:00.0s 42k]
+: critical
+Node inv.in is driven high at 577.95ns
+      ...through fet at (30, 5) to nm
+      ...through fet at (27, 5) to nl
+      ...through fet at (24, 5) to nk
+      ...through fet at (21, 5) to nj
+      ...through fet at (18, 5) to ni
+      ...through fet at (15, 5) to nh
+      ...through fet at (12, 5) to ng
+      ...through fet at (9, 5) to nf
+      ...through fet at (6, 5) to ne
+      ...through fet at (3, 5) to nd
+      ...through fet at (0, 5) to nc
+      ...through fet at (-3, 5) to nb
+      ...through fet at (-6, 5) to i2
+      ...through fet at (-17, 28) to Vdd after
+    i1 is driven low at 0.00ns
+[0:00.0u 0:00.0s 42k]
+[0:00.1u 0:00.0s 42k] Crystal done.
+
+
+Fred.
+
+From fwo@chilli.Berkeley.EDU Tue Jul 28 17:39:05 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA27691; Tue, 28 Jul 87 17:39:03 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA13456; Tue, 28 Jul 87 17:39:01 PDT
+Date: Tue, 28 Jul 87 17:39:01 PDT
+From: fwo@chilli.berkeley.edu (Fred W. Obermeier)
+Message-Id: <8707290039.AA13456@chilli.Berkeley.EDU>
+To: ouster@murder.Berkeley.EDU
+Subject: Crystal update needed.
+Cc: fwo@chilli.Berkeley.EDU
+Status: RO
+
+Jacky Chi-Fai Mak (mak@rosemary) has requested that the maximum number of
+series transistors in a critical path be increased.  I have recompiled
+crystal.h with PIECELIMIT 50.  Do you think this will cause problems?
+This is important if one is interested in timing Manchester-type carry chains.
+
+Also, the DISTRIBUTED copy of crystal should change due to an apparent change
+in scanf sematics.  It appears that the option: " %[^]" no longer works as
+expected so that "%[^\n]" would probably be more appropriate.
+
+Quasi-CAD maintainer,
+Fred.
+
+From fwo@chilli.Berkeley.EDU Tue Jul 28 17:40:51 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA27881; Tue, 28 Jul 87 17:40:49 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA13464; Tue, 28 Jul 87 17:40:47 PDT
+Date: Tue, 28 Jul 87 17:40:47 PDT
+From: fwo@chilli.berkeley.edu (Fred W. Obermeier)
+Message-Id: <8707290040.AA13464@chilli.Berkeley.EDU>
+To: fwo@chilli.Berkeley.EDU
+Subject: Where is source for ~cad/src/crystal kept?
+Status: RO
+
+Where is source for ~cad/src/crystal kept?  The next distribution will
+probably need to be changed.
+                            (continue)
+Thanx,
+Fred.
+
+From kjpires@ic.berkeley.edu Wed Jul 29 00:02:02 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA08585; Wed, 29 Jul 87 00:01:58 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA13624; Wed, 29 Jul 87 00:01:55 PDT
+Received: by ic.Berkeley.EDU (5.57/1.26)
+	id AA19556; Wed, 29 Jul 87 00:02:07 PDT
+Message-Id: <8707290702.AA19556@ic.Berkeley.EDU>
+To: fwo@chilli.Berkeley.EDU (Fred W. Obermeier)
+Subject: Re: Where is source for ~cad/src/crystal kept? 
+In-Reply-To: Your message of Tue, 28 Jul 87 17:40:34 -0700.
+             <8707290040.AA13460@chilli.Berkeley.EDU> 
+Date: Wed, 29 Jul 87 00:02:06 -0700
+From: kjpires@ic.berkeley.edu
+Status: RO
+
+There is something called ~cad/src/crystal.tape on eros.
+It looks like ~cad/new/crystal, ~cad/bin/crystal and ~cad/man/man1/crystal.1
+are rdist'ed from EROS but the source is not.
+According to the rdist scripts, ouster@ucbarpa is in charge of crystal.
+
+Kurt
+
+From fwo@chilli.Berkeley.EDU Wed Jul 29 20:07:22 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA07052; Wed, 29 Jul 87 20:07:20 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA14467; Wed, 29 Jul 87 20:07:17 PDT
+Date: Wed, 29 Jul 87 20:07:17 PDT
+From: fwo@chilli.berkeley.edu (Fred W. Obermeier)
+Message-Id: <8707300307.AA14467@chilli.Berkeley.EDU>
+To: kjpires@ic.berkeley.edu, ouster@murder.Berkeley.EDU
+Subject: Re: Where is source for ~cad/src/crystal kept?
+Cc: fwo@chilli.Berkeley.EDU
+Status: RO
+
+Dear Kurt;
+
+I couldn't find crystal source so I went to a personal copy of the 1986 VLSI
+tools tape and placed it on "eros:/cad/src/crystal.tape".  I had to modify it
+to get it to work, so I want to make sure I UPDATE the version which will be
+distributed in the future.  I also wanted to make sure that this version
+wouldn't be mistaken for the original source, so I called it "crystal.tape".
+
+Do you maintain (or keep) the DISTRIBUTED and SOURCE versions?
+(The DISTRIBUTED version on tape does not contain SCCS/, tests/, spice/,
+and other goodies.)
+
+I sent mail to ouster@murder also, but I didn't get a reply yet.
+
+Thanx,
+Fred.
+
+From kjpires@ic.berkeley.edu Wed Jul 29 21:52:35 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA26266; Wed, 29 Jul 87 21:52:33 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA14703; Wed, 29 Jul 87 21:52:31 PDT
+Received: by ic.Berkeley.EDU (5.57/1.26)
+	id AA07151; Wed, 29 Jul 87 21:52:48 PDT
+Message-Id: <8707300452.AA07151@ic.Berkeley.EDU>
+To: fwo@chilli.Berkeley.EDU (Fred W. Obermeier)
+Cc: ouster@murder.berkeley.edu
+Subject: Re: Where is source for ~cad/src/crystal kept? 
+In-Reply-To: Your message of Wed, 29 Jul 87 20:07:17 -0700.
+             <8707300307.AA14467@chilli.Berkeley.EDU> 
+Date: Wed, 29 Jul 87 21:52:47 -0700
+From: kjpires@ic.berkeley.edu
+Status: RO
+
+All I maintain in the CAD tools distribution is the rdist scripts
+that copy the source between the machines every night and this job is
+very new to me (mayo@ucbarpa has handled it until about a month ago).
+
+As far as I can tell, crystal source is not in the distribution and
+has never been -- only binaries were distributed.
+
+If you want, I'll mail around (cadgroup@ic) and ask if anyone knows
+who is really in charge of this package now.
+
+Kurt
+
+From fwo@chilli.Berkeley.EDU Wed Jul 29 22:06:13 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA28763; Wed, 29 Jul 87 22:06:11 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA14719; Wed, 29 Jul 87 22:06:08 PDT
+Date: Wed, 29 Jul 87 22:06:08 PDT
+From: fwo@chilli.berkeley.edu (Fred W. Obermeier)
+Message-Id: <8707300506.AA14719@chilli.Berkeley.EDU>
+To: kjpires@ic.Berkeley.EDU, mayo@mustard.Berkeley.EDU
+Subject: Where is the source for the MAGIC VLSI TOOLS distribution tape?
+Cc: fwo@chilli.Berkeley.EDU
+Status: RO
+
+Before, I as cadgroup at Berkeley, I though I'd ask you:
+Do you know where the source for the MAGIC VLSI TOOLS distribution are kept?
+
+Crystal is due for an update.  Unfortunately Ousterhout hasn't responded
+to my mail yet.  In the mean time, I though I would find out where the
+source for the MAGIC VLSI TOOLS distribution are kept.
+
+Thanx,
+Fred.
+
+From mayo@mustard.berkeley.edu Thu Jul 30 09:43:26 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA11356; Thu, 30 Jul 87 09:43:24 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA15281; Thu, 30 Jul 87 09:43:22 PDT
+Received: by mustard.Berkeley.EDU (5.57/1.25)
+	id AA06025; Thu, 30 Jul 87 09:41:28 PDT
+Date: Thu, 30 Jul 87 09:41:28 PDT
+From: mayo@mustard.berkeley.edu (Bob Mayo)
+Message-Id: <8707301641.AA06025@mustard.Berkeley.EDU>
+To: fwo@chilli.Berkeley.EDU, kjpires@ic.berkeley.edu
+Subject: Re:  Where is the source for the MAGIC VLSI TOOLS distribution tape?
+Status: RO
+
+The source for the Magic VLSI tools tape is oneline somewhere.  You need to
+talk to Cindy Manly at the ILP office to find out.  It might be easiest to
+for her to give you a tape.
+
+Don't plan on chaning anything on the distribution.  That requires a whole
+new release, which isn't planned until later this year.
+
+--Bob
+
+From MAILER-DAEMON@chilli.Berkeley.EDU Fri Jul 31 18:22:25 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA08263; Fri, 31 Jul 87 18:22:22 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA16578; Fri, 31 Jul 87 18:22:19 PDT
+Date: Fri, 31 Jul 87 18:22:19 PDT
+From: MAILER-DAEMON@chilli.berkeley.edu (Mail Delivery Subsystem)
+Subject: Returned mail: Cannot send message for 3 days
+Message-Id: <8708010122.AA16578@chilli.Berkeley.EDU>
+To: fwo@chilli.Berkeley.EDU
+Status: R
+
+   ----- Transcript of session follows -----
+421 murder.berkeley.edu.tcpld... Deferred: Connection refused by murder.berkeley.edu
+
+   ----- Unsent message follows -----
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA13456; Tue, 28 Jul 87 17:39:01 PDT
+Date: Tue, 28 Jul 87 17:39:01 PDT
+From: fwo (Fred W. Obermeier)
+Message-Id: <8707290039.AA13456@chilli.Berkeley.EDU>
+To: ouster@murder
+Subject: Crystal update needed.
+Cc: fwo
+
+Jacky Chi-Fai Mak (mak@rosemary) has requested that the maximum number of
+series transistors in a critical path be increased.  I have recompiled
+crystal.h with PIECELIMIT 50.  Do you think this will cause problems?
+This is important if one is interested in timing Manchester-type carry chains.
+
+Also, the DISTRIBUTED copy of crystal should change due to an apparent change
+in scanf sematics.  It appears that the option: " %[^]" no longer works as
+expected so that "%[^\n]" would probably be more appropriate.
+
+Quasi-CAD maintainer,
+Fred.
+
+From MAILER-DAEMON@chilli.Berkeley.EDU Sat Aug  1 20:22:25 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA09844; Sat, 1 Aug 87 20:22:23 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA17767; Sat, 1 Aug 87 20:22:19 PDT
+Date: Sat, 1 Aug 87 20:22:19 PDT
+From: MAILER-DAEMON@chilli.berkeley.edu (Mail Delivery Subsystem)
+Subject: Returned mail: Cannot send message for 3 days
+Message-Id: <8708020322.AA17767@chilli.Berkeley.EDU>
+To: fwo@chilli.Berkeley.EDU
+Status: R
+
+   ----- Transcript of session follows -----
+421 murder.berkeley.edu.tcpld... Deferred: Connection refused by murder.berkeley.edu
+
+   ----- Unsent message follows -----
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA14467; Wed, 29 Jul 87 20:07:17 PDT
+Date: Wed, 29 Jul 87 20:07:17 PDT
+From: fwo (Fred W. Obermeier)
+Message-Id: <8707300307.AA14467@chilli.Berkeley.EDU>
+To: kjpires@ic.berkeley.edu, ouster@murder
+Subject: Re: Where is source for ~cad/src/crystal kept?
+Cc: fwo
+
+Dear Kurt;
+
+I couldn't find crystal source so I went to a personal copy of the 1986 VLSI
+tools tape and placed it on "eros:/cad/src/crystal.tape".  I had to modify it
+to get it to work, so I want to make sure I UPDATE the version which will be
+distributed in the future.  I also wanted to make sure that this version
+wouldn't be mistaken for the original source, so I called it "crystal.tape".
+
+Do you maintain (or keep) the DISTRIBUTED and SOURCE versions?
+(The DISTRIBUTED version on tape does not contain SCCS/, tests/, spice/,
+and other goodies.)
+
+I sent mail to ouster@murder also, but I didn't get a reply yet.
+
+Thanx,
+Fred.
+
+From fwo@chilli.Berkeley.EDU Sun Aug  2 18:45:38 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA11313; Sun, 2 Aug 87 18:45:34 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA18686; Sun, 2 Aug 87 18:45:28 PDT
+Date: Sun, 2 Aug 87 18:45:28 PDT
+From: fwo@chilli.berkeley.edu (Fred W. Obermeier)
+Message-Id: <8708030145.AA18686@chilli.Berkeley.EDU>
+To: mak@rosemary.Berkeley.EDU
+Subject: Addition of a Crystal command or option?
+Cc: fwo@chilli.Berkeley.EDU, kong@chilli.Berkeley.EDU
+Status: R
+
+Sorry for this long message, but I need to find out exactly what kind of
+information you are interested in.  I have outlined some problems that you
+should have considered:
+
+I have found the point in the code to make the required changes, but
+I am confused to what I should actually do.  (dprint.c: DPRrecord()).
+The change should not produce misleading results by ignoring some
+critical paths or subpaths.
+
+Presently critical paths that are within .1% of a time that has already
+recorded will be ignored.  This should not cause too many problems if one
+is interested in the absolute slowest path.  However, since you are
+interested in near-critical paths too, this strategy won't work.
+That is, an entirely different critical path that has almost the same
+time will NOT be stored (or printed).  (Nodes that are nearly as slow
+and may not be in the data path will be ignored!) However, it IS these
+paths that are of interest to you.
+
+This will give you problems when you want to improve your circuit.
+For example, let us say there are three critical paths:
+	A-B	(node A to node B)	time: 10.000 ns
+	C-D	(node C to node D)	time: 10.005 ns
+	E-F	(node E to node F)	time: 10.1ns
+Crystal will probably report paths C-D and E-F.  Then you improve
+C-D and E-F.  Suddenly A-B path will appear when you run crystal
+again on your circuit.  This will give you problems if improving
+E-F slowed down the A-B path!  Therefore, crystal presently potentially
+OBSCURES entirely different near critical paths.
+
+Therefore, the change will HAVE TO REMOVE the .1% time limitation.
+I could add an option which will limit the number of saved
+critical paths to any node and remove the .1% time limitation.
+(THIS OPTION WILL DO TWO THINGS!)  Therefore, I can print the
+M slowest paths (option paths M) of which a node can only have
+N critical paths (option max_paths_to_a_node N).
+For example M=500 and N=2 implies: save the 500 slowest paths of which
+a node can appear only twice in this list.
+
+However, this may still produce too much information for you as sub-paths
+of a larger critical path may be slower than a critical path you are
+interested in.  For example, a circuit may have these critical paths:
+	(nodes: name[slice][number])
+
+	N[0][0]-N[0][1]-N[0][2]-N[0][3]-N[0][4]
+	N[1][0]-N[1][1]-N[1][2]-N[1][3]-N[1][4]
+	N[2][0]-N[2][1]-N[2][2]-N[2][3]-N[2][4]
+	A-B-C-D
+
+Let us say that the paths N[*][0]-N[*][4] are almost the same and
+ A-B-C-D is slightly slower than the subpath N[*][0]-N[*][1].
+Therefore, if M=500 and N=1, 9 critical paths will be printed before the
+distinct path A-B-C-D is printed:
+	Possible ordering of paths:
+	N[*][0]-N[*][4] = 3
+	N[*][0]-N[*][3] = 3
+	N[*][0]-N[*][2] = 3
+	A-B-C-D
+Now imagine if there were many more nodes in the bit-sliced critical path,
+and you see the problem with limiting the number of nodes.
+
+Probably the solution should ignore sub paths.  However, this may cause an
+error since negative gate delay times are possible:
+	nodes:	A     - B     - C     - D
+	times:	0.0ns	2.0ns	4.0ns	3.0ns
+This can arise if the stage between nodes C and D is large but D has a very
+small load.  Therefore, node D can reach its 50% point before node C has
+reached its 50% point.
+
+The only changes to CRYSTAL I want to make are those which do not mislead
+potential users (and you too).  So could you give these issues some though
+and recommend a strategy that you think will meet your circumstances?
+Then let's talk about it and I'll do the change.
+
+Fred.
+
+From mak@rosemary.Berkeley.EDU Fri Jul 31 15:55:10 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA04717; Fri, 31 Jul 87 15:55:08 PDT
+Received: by rosemary.Berkeley.EDU (5.57/1.25)
+	id AA23562; Fri, 31 Jul 87 15:54:52 PDT
+Date: Fri, 31 Jul 87 15:54:52 PDT
+From: mak@rosemary.berkeley.edu (Jacky Chi-Fai Mak)
+Message-Id: <8707312254.AA23562@rosemary.Berkeley.EDU>
+To: fwo@ginger.Berkeley.EDU
+Subject: Crystal
+Status: R
+
+
+Crystal for the SPUR CPU has been running fine. But there is a relatively
+minor problem: the first few critical paths that crystal reports are 
+usually very similar (for example, different paths for different bits of
+a data bus). I was told that I could set up crystal in such a way that it
+would ignore paths that are within a certain percentage of each other. I
+read through the crystal manual but I did not find the command. Do you 
+know how that can be done?
+
+							Thanks, 
+								Jacky
+
+From ouster@mace.berkeley.edu Mon Aug  3 14:03:05 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA13336; Mon, 3 Aug 87 14:03:03 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA19398; Mon, 3 Aug 87 14:03:01 PDT
+Received: by mace.Berkeley.EDU (5.57/1.25)
+	id AA08844; Mon, 3 Aug 87 14:02:33 PDT
+Date: Mon, 3 Aug 87 14:02:33 PDT
+From: ouster@mace.berkeley.edu (John Ousterhout)
+Message-Id: <8708032102.AA08844@mace.Berkeley.EDU>
+To: fwo@chilli.Berkeley.EDU
+Subject: Re:  Crystal update needed.
+Status: R
+
+I think that there are some pieces of code that will have running
+time related to the number of series transistors, but I don't think
+this will result in a noticeable slow-down.
+
+Thanks also for the note about the "[^\n]" bug.  I think that the
+easiest way to handle this is to wait until we're getting ready to
+put together the next distribution.  If/when this time occurs, I'll
+make sure that we come to you for your latest and greatest version
+of Crystal.
+					-John-
+
+From mak@kilby.berkeley.edu Tue Aug  4 15:41:48 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA01328; Tue, 4 Aug 87 15:41:45 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA20437; Tue, 4 Aug 87 15:41:40 PDT
+Received: by kilby.Berkeley.EDU (3.2/1.25)
+	id AA18638; Tue, 4 Aug 87 15:37:11 PDT
+Date: Tue, 4 Aug 87 15:37:11 PDT
+From: mak@kilby.berkeley.edu (Jacky Chi-Fai Mak)
+Message-Id: <8708042237.AA18638@kilby.Berkeley.EDU>
+To: fwo%chilli.Berkeley.EDU@berkeley.edu
+Subject: Re:  Addition of a Crystal command or option?
+Status: R
+
+Sorry for not replying to your mail until today. I have given a
+little thought on the problems you presented on your last message.
+(Actually the more I thought about it, the less confidence I felt
+in crystal.)
+
+1. option max_paths_to_a_node N
+
+   This is certainly a good idea. However, consider the following
+   situation:
+
+           E-F-G-H (time=15.0ns)
+          /
+   A-B-C-D-J-K-L (time=14.7ns)
+          \
+           M-N-P (time=14.6ns)
+
+   If N=2, then the path A-B-C-D-M-N-P will be discarded by Crystal.
+   This will be dangerous if node D happens to be one bit of a data
+   bus which goes to many places in the execution unit. 
+
+2. option no_print_subpaths
+
+   This option could cause error as you pointed out. But if the
+   user uses this options together with the command:
+
+   critical -g path.g
+
+   then he/she can easily find out the error by looking at the 
+   layout. 
+
+   If this option is installed, I think the user will benefit by
+   running crystal without this option the first round, and then
+   run crystal again with this option on. (Usually the user does
+   not care about the near-critical paths until he/she has found
+   the most-critical path right.)
+
+It is certainly true that these two options could cause error, but
+if the user is cautious when he/she uses them, them can still be
+beneficial. At least, I would like to try them out and compare with
+my present crystal outputs for the SPUR CPU.
+
+												Thanks
+														Jacky
+
+   
+
+From fwo@chilli.Berkeley.EDU Tue Aug  4 20:01:31 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA05535; Tue, 4 Aug 87 20:01:27 PDT
+Received: by chilli.Berkeley.EDU (5.57/1.25)
+	id AA20697; Tue, 4 Aug 87 20:01:21 PDT
+Date: Tue, 4 Aug 87 20:01:21 PDT
+From: fwo@chilli.berkeley.edu (Fred W. Obermeier)
+Message-Id: <8708050301.AA20697@chilli.Berkeley.EDU>
+To: mak@kilby.berkeley.edu
+Subject: Re:  Addition of a Crystal command or option?
+Cc: fwo@chilli.Berkeley.EDU
+Status: R
+
+I don't want to be difficult, but the paths given in my message should
+be read from left to right:
+RE:>	A-B     (node A to node B)      time: 10.000 ns
+	
+Therefore:
+>	1. option max_paths_to_a_node N
+
+The option with limit the number of paths TO a node not FROM a node.
+In other words, only at most N slowest paths will be recorded to any node.
+The paths can originate from any node:
+	
+	if	H->A	t=15.0ns
+		L->A	t=14.7ns
+		P->A	t=14.6ns
+		P->Q	t= 3.0ns
+
+	AND:
+
+	H-G-F-E
+	       \
+	  L-K-J-D-C-B-A
+	       /
+	  P-N-M
+	       \
+		Q
+
+	Then only H->A, L->A and P->Q would be recorded for N=2
+	(option paths >3).
+
+If A was the output of a bus B bits wide (A<1:B>), then you would see at least
+N*B paths before let us say, path P->Q would appear.
+
+Even if I would limit the number of paths to subscripted variables,
+(A<1:B> would only get at most N critical paths), paths from {H,L,P} to B<1:B>
+and all subsets may also appear before the path, P->Q would appear.
+I am not sure if I this can even be easily specified on the input.
+
+I added the command prnodes {nodes} which will print out the worst case
+time for each requested {nodes} or all nodes if {nodes} has been given.
+E.G:
+	envy:~cad/src/crystal/crystal ~cad/src/crystal/tests/pla.sim
+		...
+		: input *inp *en
+		[0:00.0u 0:00.0s 16k]
+: output *out
+[0:00.0u 0:00.0s 16k]
+: delay *in 0 0
+Marking transistor flow...
+Setting Vdd to 1...
+Setting GND to 0...
+(91 stages examined.)
+[0:00.3u 0:00.0s 40k]
+: prnodes
+Node input3 (see drain at 56,-120) set to 0.00ns up, 0.00ns down.
+Node input4 (see drain at 72,-120) set to 0.00ns up, 0.00ns down.
+Node 111 (see gate at 11,-52) set to 8.23ns up, 6.88ns down.
+Node EnableOut (see gate at 96,-66) set to -1.00ns up, -1.00ns down.
+Node 6 (see gate at 24,-110) set to 2.48ns up, 1.24ns down.
+Node 7 (see gate at 40,-110) set to 2.48ns up, 1.24ns down.
+Node 8 (see gate at 56,-110) set to 2.48ns up, 1.24ns down.
+...
+: prnodes 7 8
+ isn't in table!	<*** I HAVE TO FIX THIS MESSAGE ***
+Node 7 (see gate at 40,-110) set to 2.48ns up, 1.24ns down.
+Node 8 (see gate at 56,-110) set to 2.48ns up, 1.24ns down.
+[0:00.0u 0:00.0s 40k]
+
+
+>	2. option no_print_subpaths
+The negative gate delay paths will NOT be printed out as they would
+be part of a sub-path.  I don't see how the user will discover a
+critical path that was NOT printing out (because it was a subpath)!
+E.G.:
+	A->B->C->D->E
+	           /
+	 F->G->H->I
+
+	A	B	C	D	E
+	0.0ns	2.0ns	4.0ns	7.0ns	6.5ns
+
+	F	G	H	I
+	0.0ns	2.1ns	3.3ns	5.5ns
+
+	If path F->E caused the 6.5ns, then we should show A->D even
+	though it is on a sub-path to E.
+
+Unfortunately, it would be very difficult to remove ALL subpaths anyway.
+It would be very misleading to arbitrarily remove SAME subpaths.
+Therefore, I really can't implement it easily:
+	either storage costs go way up (have to save EVERY critical path)
+	or I change how critical paths are found (also hard).
+
+Therefore, I recommend 'option max_paths_to_a_node N'.
+However, how do you think I can handle the 2nd problem?
+
+Fred.
+
+From dkjeong@eros.Berkeley.EDU Tue Aug 11 12:32:46 1987
+Received: by ginger.Berkeley.EDU (5.57/1.25)
+	id AA21635; Tue, 11 Aug 87 12:32:45 PDT
+Received: by eros.Berkeley.EDU (5.57/1.16)
+	id AA18404; Tue, 11 Aug 87 12:30:51 PDT
+Date: Tue, 11 Aug 87 12:30:51 PDT
+From: dkjeong@eros.berkeley.edu (Deog-Kyoon Jeong)
+Message-Id: <8708111930.AA18404@eros.Berkeley.EDU>
+To: fwo@ginger.Berkeley.EDU
+Subject: Crystal Problem
+Cc: dkjeong@kilby.Berkeley.EDU
+Status: RO
+
+
+Hi,
+I am just curious if you have experienced the same 
+problem as mine about crystal. I am simulating
+a simple latch with both p and n pass gates.
+I turned those two pass gates on with the command "set".
+But when the spice output was generated thru the
+path, only one type of pass gate appeared, resulting
+in a significant error in SPICE simulation result. 
+Is there any way to include both pass gates in the
+spice input deck?
+				Thanks.
+				D.K. Jeong
+
+From fwo@chilli Fri Apr 22 00:58:08 1988
+Received: by ginger (5.57/1.25)
+	id AA02321; Fri, 22 Apr 88 00:58:06 PDT
+Received: by chilli (5.57/1.25)
+	id AA00958; Fri, 22 Apr 88 00:58:03 PDT
+Date: Fri, 22 Apr 88 00:58:03 PDT
+From: fwo@chilli (Fred W. Obermeier)
+Message-Id: <8804220758.AA00958@chilli>
+To: bk@chilli
+Subject: Crystal
+Cc: fwo@chilli
+Status: RO
+
+Sorry I didn't get back to you sooner, BK.
+
+I've got a new version of crystal that seems to work:
+	envy:~cad/src/crystal/crystal
+	eros:~fwo/crystal/crystal
+on two examples: 32 bit combinational adder and a 2-inverter chain.
+	envy:~fwo/crystal.problems/adder.32.crystal.in
+	envy:~fwo/crystal.problems/inv.2.crystal.in
+
+I've added the command: block node node ....
+	where "node" are nodes that we wish to terminate critical delay paths
+	on.  Use this with care since it will hide ANY and ALL potential delay
+	paths between "blocked" nodes.  As I mentioned earlier, critical paths
+	that would include these "blocked" nodes are neglected.
+	These are potential sources of misunderstandings for users.
+
+I'm running the fpu.sim design on unloaded rosemary this evening.
+	I'm dropping the "critical -s EAsubB.spice -g EAsubB.graph 1"
+	in envy:~cad/src/crystal/
+	I'll have to get the critical paths from the window when I return
+	tomorrow morning.  Alternatively, if the office is open, I'll leave
+	the rosemary window open.  You can play around with the analysis
+	if you wish.  So far the complete contents are in
+	envy:~fwo/crystal.problems/big.crystal.out
+
+	If you wish, you can kill off my crystal simulation on rosemary
+	if you think it will not be of value.
+
+	As you can see, it takes about 11 minutes user minutes on unloaded
+	rosemary to get the circuit loaded.  I think the real time is about 15 
+	to 20 minutes.  However, the delay time is a LOT longer.
+
+	I'm also running a typescript on eros, to get the node trace:
+		~fwo/crystal/big.crystal.output
+	by setting:
+		options seealldelays
+
+Fred.
+
+From bk@saffron Fri Apr 22 10:07:36 1988
+Received: by ginger (5.57/1.25)
+	id AA03290; Fri, 22 Apr 88 10:07:34 PDT
+Received: by chilli (5.57/1.25)
+	id AA01452; Fri, 22 Apr 88 10:07:31 PDT
+Received: by saffron (5.57/1.25)
+	id AA18584; Fri, 22 Apr 88 10:07:27 PDT
+Date: Fri, 22 Apr 88 10:07:27 PDT
+From: bk@saffron (B.K. Bose)
+Message-Id: <8804221707.AA18584@saffron>
+To: fwo@chilli
+Subject: Re:  Crystal
+Status: RO
+
+thanks very much, fred; we'll keep you informed on our tests ...bk
+
+From fwo@chilli Sun Apr 24 15:33:46 1988
+Received: by ginger (5.57/1.25)
+	id AA04997; Sun, 24 Apr 88 15:33:42 PDT
+Received: by chilli (5.57/1.25)
+	id AA03559; Sun, 24 Apr 88 15:33:36 PDT
+Date: Sun, 24 Apr 88 15:33:36 PDT
+From: fwo@chilli (Fred W. Obermeier)
+Message-Id: <8804242233.AA03559@chilli>
+To: bk@chilli
+Subject: Success ...
+Cc: fwo@chilli
+Status: RO
+
+BK,
+
+As I mentioned in the previous message, the extraction of the fpu.nopads.sim
+may not be correct (since the magic I used may not use the right technology
+revision file).  See /spare/tmp/fwo for the crystal input and output.
+Please remove them when you are done.
+
+NOTE the crystal fun complained about a few missing nodes:
+...
+>> Node frac_0/shifter_0/shfdec_fdec_0/dec67.new_0/dec1_6/shi+1 doesn't exist!
+...
+
+However, I was able to successfuly run crystal on the block you were
+interested in.  For your potential interest I also show
+the fixed voltage settings ("Node forced to ...") by ":options seeallsettings"
+and the delay calculations ("Delay at ...") by ":options seealldelays".
+.
+
+The critical path is:
+...
+: critical 1
+Node exp_0/e-adder-out<16>& is driven low at 17.00ns
+....
+
+Fred.
+
+From fwo@chilli Mon Apr 25 01:38:09 1988
+Received: by ginger (5.57/1.25)
+	id AA05955; Mon, 25 Apr 88 01:38:07 PDT
+Received: by chilli (5.57/1.25)
+	id AA04759; Mon, 25 Apr 88 01:38:03 PDT
+Date: Mon, 25 Apr 88 01:38:03 PDT
+From: fwo@chilli (Fred W. Obermeier)
+Message-Id: <8804250838.AA04759@chilli>
+To: bk@chilli, daebum@chilli,
+        hoaluong@chilli, ouster@chilli
+Subject: Crystal updates
+Cc: fwo@chilli
+Status: R
+
+BK, Daebum, Hoa, and John
+
+Due to a number of analysis problems by the FPU group, a new version of
+Crystal (version 4) has been install on:
+	envy:~cad/new/crystal     and
+	eros:~cad/new/crystal
+
+Three commands have been added:
+	totalcapacitance
+	prnode node node ...
+	block node node ...
+
+And these options have been added:
+	noseeflows
+	seeallflows
+	seeflows
+
+See (envy: and eros:) ~cad/src/crystal/changelog for more information.
+I'll update crystal.1, the manual page, later on.
+
+Fred.
+

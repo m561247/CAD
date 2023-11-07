@@ -1,0 +1,91 @@
+To create a user defined gate in musa, the programmer must first
+create several routines.  There must be a routine for reading the gate
+from Oct, a routine for initializing the gate, a routine for displaying
+information about a gate, a routine for simulating the gate, and a
+routine for re-initializing the gate after a loadstate command.  In
+addition, there will be two further routines required in the future.
+These routines will save the internal state of a gate for the savestate
+command, and load the internal state of a gate for the loadstate
+command.
+
+------------------------------------------------------------
+
+The file "device.c" must be modified in order to add a new gate.  The
+first thing to add is the "extern" declaration for the new routines.
+
+Next, add the name of the new routine to read from Oct to the list of
+"read_routine"'s.
+
+Next define the names and the types of the new instance terminals in
+the format: "NAME", TYPE, "NAME", TYPE.  There are three terminal types
+from which to choose.  TERM_VSI is an input to an instance which will cause
+the instance to be scheduled whenever the connected node changes its
+voltage level.  TERM_DSI is an input to an instance which will cause the
+instance to be scheduled whenever the connected node changes in any way
+(i.e. from charged to driven or driven to weakly driven -- even if the
+node voltage is constant).  TERM_DSI would most likely be for a bidectional
+terminal which drives when it it is not being driven.  TERM_OUTPUT is a
+connection to an instance (probably an output) which never causes the
+instance to be scheduled.
+
+Next place an entry for the gate in the "dtable" array.  Each entry has
+12 fields.  The first field is the name of the gate.  The second field
+is a bit tricky.  It's value must be the number of the last declared
+terminal, or zero.  If the second field is zero, no special terminals
+are created.  If the second field is non-zero, the numbered terminal
+information is used for that terminal and all higher numbered
+terminals.  For example, this is used in the logic gate to create
+terminals INPUT1, INPUT2, INPUT3, etc.
+
+The third field points to the terminal declartion array.  The fourth
+field points to the gate simulation routine.  The fifth through seventh
+fields are arguments to the simulation routine, as described below.
+The eighth field points to the routine to give information about the
+instance.
+
+The ninth field points to the routine which initializes the instance
+right after read-in.  If no initialization is required, "null_routine"
+should be placed in this field.  If the instance must be schedule for
+initial evaluation, "inst_sched3" should be used.  The tenth field
+points to the routine which initializes the instance right after a
+loadstate command.
+
+The eleventh and twelfth fields point to routines to save and load the
+state of gates.  These routines are not currently called by musa.
+
+------------------------------------------------------------
+
+Writing routines to interface to musa requires some understanding
+of the musa data structure.  Here are the essentials:
+
+Musa instances are the type minst.  All routines user routines are
+passed a (minst *) pointing to the given instance.  A connection to
+an instance is
+	inst->connArray[i]
+where i is the terminal number.  Voltages are 1 => low, 2 => high, and
+3 => X.  To get the voltage on a attached node use:
+	inst->connArray[i].node->data & VOLTAGE
+A full breakdown of composite node levels is given is "sim.h".  To
+access these composite voltages from the data base use:
+	inst->connArray[i].node->data & COMPOSITE
+
+To determine if a particular terminal of a instance is driving its
+associated node low, test the single bit:
+	inst->connArray[i].lout
+To determine the level of drive, look at
+	inst->connArray[i].llevel
+A drive of 1 implies strongly driven, a drive of 128 implies weakly
+driven.  There are also "hout" and "hlevel" fields.
+
+------------------------------------------------------------
+
+The routine which reads from Oct has three parameters:
+
+int gate_read(ifacet, inst, celltype)
+octObject *ifacet;	/* interface facet of instance */
+octObject *inst;	/* Oct instance */
+char *celltype;		/* string found in the CELLTYPE property */
+
+If the read routine returns a false value, this indicates that
+the Oct instance was not a gate which this routine recocognizes.
+If the routine 

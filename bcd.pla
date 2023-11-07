@@ -1,0 +1,22 @@
+.i 4            # number of inputs, B0 to B3
+.o 7            # number of outputs, a to g
+.type fr        # type of PLA file (f: full product terms, r: reduced to prime implicants if possible)
+.ilb B0 B1 B2 B3 # input labels
+.ob a b c d e f g # output labels
+0000 1111110    # 0
+0001 0110000    # 1
+0010 1101101    # 2
+0011 1111001    # 3
+0100 0110011    # 4
+0101 1011011    # 5
+0110 1011111    # 6
+0111 1110000    # 7
+1000 1111111    # 8
+1001 1111011    # 9
+1010 0000000    # Invalid input
+1011 0000000    # Invalid input
+1100 0000000    # Invalid input
+1101 0000000    # Invalid input
+1110 0000000    # Invalid input
+1111 0000000    # Invalid input
+.e              # end of the PLA program

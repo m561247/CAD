@@ -1,0 +1,8 @@
+CCT 	V4inm(in, inb, pad)
+
+V4in	G1(in, inb, pad);
+
+INPUT	pad;
+WIRE	in inb;
+.
+

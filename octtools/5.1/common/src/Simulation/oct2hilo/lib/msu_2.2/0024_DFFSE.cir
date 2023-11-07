@@ -1,0 +1,29 @@
+CCT (r1,f1,mr1,mf1,oc1,r2,f2,mr2,mf2,oc2,ic1,ic2,ic3,ic4) dffsetreset (Q,QB,DATA,CLK2,RST3,SET4)
+
+capacitor(ic1) cap1(DATA);
+capacitor(ic2) cap2(CLK2);
+capacitor(ic3) cap3(RST3);
+capacitor(ic4) cap4(SET4);
+capacitor(oc1) cap5(Q);
+capacitor(oc2) cap6(QB);
+
+REGISTER(r1,f1,mr1,mf1,0) Q = LOADCASE {SET4,RST3},
+	           0? = 1,
+		   10 = 0,
+		   X0 = X
+		  ENDCASE;
+REGISTER(r2,f2,mr2,mf2,0) QB = LOADCASE {RST3,SET4},
+		    0? = 1,
+		    10 = 0,
+		    X0 = X
+		   ENDCASE;
+
+INPUT           DATA CLK2 RST3 SET4;
+
+WHEN CLK2(?:X TO 0) DO
+	CASE {SET4,RST3},
+	 11 - Q = DATA
+	      QB = NOT DATA
+	ENDCASE;
+.
+

@@ -1,0 +1,79 @@
+| units: 200	tech: nmos
+e 118 GND 92 2 4 119 -42
+e 64 GND 118 2 4 32 -44
+d 118 Vdd 118 4.5 2 11 -44
+e 111 92 GND 2 4 119 -50
+e 32 111 GND 2 4 72 -52
+d 111 Vdd 111 4.5 2 11 -52
+e 97 GND 89 2 4 95 -58
+e 32 97 GND 2 4 72 -60
+e 30 97 GND 2 4 56 -60
+e 28 97 GND 2 4 40 -60
+e 26 97 GND 2 4 24 -60
+d 97 Vdd 97 4.5 2 11 -60
+e EnableOut 92 54 2 2 120 -66
+e EnableOut 91 58 2 2 112 -66
+e EnableOut 90 53 2 2 104 -66
+e EnableOut 89 57 2 2 96 -66
+e 32 GND 66 2 8 72 -79
+e 30 GND 65 2 8 56 -79
+e 28 GND 64 2 8 40 -79
+e 26 GND 63 2 8 24 -79
+d 66 66 Vdd 2 2 66 -82
+d 65 65 Vdd 2 2 50 -82
+d 64 64 Vdd 2 2 34 -82
+d 63 63 Vdd 2 2 18 -82
+e 58 GND output3 2 8 113 -86
+e 57 GND output1 2 8 97 -86
+d 32 Vdd 32 2 2 66 -90
+d 30 Vdd 30 2 2 50 -90
+d 28 Vdd 28 2 2 34 -90
+d 26 Vdd 26 2 2 18 -90
+e 54 output4 GND 2 8 118 -92
+e 53 output2 GND 2 8 102 -92
+d output3 output3 Vdd 4 2 115 -102
+d output1 output1 Vdd 4 2 99 -102
+d output4 output4 Vdd 4 2 116 -110
+d output2 output2 Vdd 4 2 100 -110
+e 9 GND 32 2 16 72 -110
+e 8 GND 30 2 16 56 -110
+e 7 GND 28 2 16 40 -110
+e 6 GND 26 2 16 24 -110
+e EnableIn 9 input4 2 2 72 -120
+e EnableIn 8 input3 2 2 56 -120
+e EnableIn 7 input2 2 2 40 -120
+e EnableIn 6 input1 2 2 24 -120
+d 92 Vdd 92 4.5 2 119 -12
+d 91 Vdd 91 4.5 2 111 -12
+d 90 Vdd 90 4.5 2 103 -12
+d 89 Vdd 89 4.5 2 95 -12
+e 143 91 GND 2 4 111 -18
+e 66 GND 143 2 4 64 -20
+e 65 GND 143 2 4 48 -20
+d 143 Vdd 143 4.5 2 11 -20
+e 134 GND 90 2 4 103 -26
+e 64 GND 134 2 4 32 -28
+d 134 Vdd 134 4.5 2 11 -28
+e 127 92 GND 2 4 119 -34
+e 63 GND 127 2 4 16 -36
+d 127 Vdd 127 4.5 2 11 -36
+C output1 GND 51
+C output2 GND 52
+C output3 GND 51
+C output4 GND 52
+C 26 GND 57
+C 28 GND 57
+C 30 GND 57
+C 32 GND 60
+C Vdd GND 432
+C 64 GND 51
+C 65 GND 54
+C 66 GND 54
+C 90 GND 57
+C 92 GND 71
+C 97 GND 100
+C 111 GND 73
+C 118 GND 73
+C 127 GND 63
+C 134 GND 67
+C 143 GND 82

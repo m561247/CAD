@@ -1,0 +1,40 @@
+NAME: crystal
+DESCRIPTION: A CMOS switch level timing analyser
+TYPE: T
+PACKAGES: oh oct st tr list errtrap uprintf utility mm port vov
+MISC: PROBLEMS README ReadMe changelog att.c kenner1 kenner2 mkcp.1 mkcp.c rdspice.c spice tests unitmodel.c
+INSTALL: ${OCTTOOLS}/bin/mkcp ${OCTTOOLS}/man/man1/mkcp.1 rdspice
+
+EXTRAFLAGS: 
+
+SOURCES: build.c check.c clear.c commands.c debug.c delay.c dprint.c expand.c flow.c graphout.c hash.c lookup.c main.c mark.c misc.c model.c nextfield.c octBuild.c octCap.c octNames.c octProps.c octStHelper.c octStore.c print.c prsmodel.c quad.c rcmodel.c rdspice.c runstats.c slopemodel.c spice.c totalcap.c version.c
+HEADERS: cOct.h crystal.h hash.h
+OBJECTS: build.o check.o clear.o commands.o debug.o delay.o dprint.o expand.o flow.o graphout.o hash.o lookup.o main.o mark.o misc.o model.o nextfield.o octBuild.o octCap.o octNames.o octProps.o octStHelper.o octStore.o print.o prsmodel.o quad.o rcmodel.o runstats.o slopemodel.o spice.o totalcap.o version.o
+SYSLIBS: -lc -lm
+
+VERBATIMSTART
+
+${OCTTOOLS}/bin/mkcp: mkcp
+	${CP} $? $@
+
+mkcp: mkcp.o nextfield.o
+	${CC} ${COMPFLAGS} ${INCLUDE} -o $@ mkcp.o nextfield.o
+
+${OCTTOOLS}/man/man1/mkcp.1: mkcp.1
+	rm -f $@
+	${TBL} < $? > $@
+
+rdspice: rdspice.c
+	${CC} ${COMPFLAGS} ${INCLUDE} $? -o $@
+
+clean::
+	rm -rf mkcp mkcp.o rdspice
+
+mkcp.o: ${OCTTOOLS}/include/ansi.h
+rdspice.o: ${OCTTOOLS}/include/ansi.h
+
+VERBATIMEND
+
+TESTNAME: $(NAME)-test
+TESTSOURCES: 
+TESTOBJECTS: 

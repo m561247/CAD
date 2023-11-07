@@ -1,0 +1,16 @@
+vis +l
+push 206 -207 2 2
+paint e
+label [5]8.2ns
+push 207 -81 2 2
+paint e
+label [4]7.5ns
+push 21 -83 2 2
+paint e
+label [3]6.8ns
+push 99 -106 2 2
+paint e
+label [2]2.6ns
+push 99 -169 2 2
+paint e
+label [1]2.1ns

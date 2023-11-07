@@ -1,0 +1,992 @@
+%!
+% fulladder:schematic:contents - output from oct2ps on Wed May 30 18:43:41 1990
+% OCT2PS (compiled Nov 28 1989)
+%
+% oct2ps -t -F Times-Bold/16 fulladder:schematic:contents
+%
+%
+% PostScript prologue file for oct2ps
+%
+%   Rick L. Spickelmier
+%
+
+%
+% tile a box
+%
+% llx lly urx ury tb
+%
+/tb {
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+% if the layer is all 1's, don't tile it, fill it
+bm 256 eq
+{
+  0 setgray
+  newpath
+  llx lly moveto
+  urx lly lineto
+  urx ury lineto
+  llx ury lineto
+  closepath fill
+}
+{
+bm 0 ne
+{
+gsave
+/tilex { bmw llx bmw div cvi mul bmw sub } def
+/tiley { bmh lly bmh div cvi mul bmh sub } def
+/xcount { 1 urx tilex sub bmw div cvi add } def
+/ycount { 1 ury tiley sub bmh div cvi add } def
+xcount 0 lt { /xcount 1 def } if
+ycount 0 lt { /ycount 1 def } if
+%
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath clip
+
+/strng xcount string def
+
+0 1 xcount 1 sub { strng exch bm put } for
+
+ycount { tilex tiley moveto strng show 0 bmh translate } repeat
+
+grestore
+} if
+} ifelse
+} def
+%
+% tile a bitmap with out clipping (for polygons)
+%
+% llx lly urx ury tp
+%
+/tp {
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+% if the layer is all 1's, don't tile it, fill it
+bm 256 eq
+{
+  0 setgray
+  newpath
+  llx lly moveto
+  urx lly lineto
+  urx ury lineto
+  llx ury lineto
+  closepath fill
+}
+{
+bm 0 ne
+{
+gsave
+/tilex { bmw llx bmw div cvi mul bmw sub } def
+/tiley { bmh lly bmh div cvi mul bmh sub } def
+/xcount { 1 urx tilex sub bmw div cvi add } def
+/ycount { 1 ury tiley sub bmh div cvi add } def
+xcount 0 lt { /xcount 1 def } if
+ycount 0 lt { /ycount 1 def } if
+%
+/strng xcount string def
+
+0 1 xcount 1 sub { strng exch bm put } for
+
+ycount { tilex tiley moveto strng show 0 bmh translate } repeat
+
+grestore
+} if
+} ifelse
+} def
+%
+% formal terminal
+%
+% llx lly urx ury string ft
+%
+/ft {
+/str exch def
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath stroke
+llx lly moveto
+str show
+} def
+%
+% actual terminal
+%
+% llx lly urx ury string at
+%
+/at {
+/str exch def
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath stroke
+urx str stringwidth pop sub ury fscale sub moveto
+str show
+} def
+%
+% label
+%
+% x y string lb
+%
+/lb {
+/str exch def
+/y exch def
+/x exch def
+x y moveto
+str show
+} def
+%
+% outline with text
+%
+% llx lly urx ury string ot
+%
+/ot {
+/str exch def
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+/cx llx urx add 2 div def
+/cy lly ury add 2 div def
+/halfstrwidth str stringwidth pop 2 div def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath 0.8 setgray fill
+0 setgray newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+closepath stroke
+cx halfstrwidth sub cy moveto
+str show
+} def
+%
+% box outline 
+%
+% llx lly urx ury bx
+%
+/bx {
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+llx lly lineto
+closepath stroke
+} def
+%
+% abstract connector
+%
+% llx lly urx ury con
+%
+/con {
+/ury exch def
+/urx exch def
+/lly exch def
+/llx exch def
+newpath
+llx lly moveto
+urx lly lineto
+urx ury lineto
+llx ury lineto
+llx lly lineto
+urx ury lineto
+llx ury moveto
+urx lly lineto
+closepath stroke
+} def
+%
+% draw a line
+%
+% x1 y1 x2 y2 ln
+%
+/ln {
+/y2 exch def
+/x2 exch def
+/y1 exch def
+/x1 exch def
+newpath
+x1 y1 moveto
+x2 y2 lineto
+stroke
+} def
+
+/putbm {
+   /arr exch def
+   /str arr length string def
+   0 1 arr length 1 sub { str exch dup arr exch get put } for
+   str
+} def
+/fctm matrix currentmatrix def
+0 0 translate
+178 334 translate
+%%BoundingBox: 178 334 433 456
+/sc 0.170413 def
+/fsize 16.000000 def
+/fscale fsize sc div def
+/psize 8 def
+/scsize psize sc div def
+/lfont { /Times-Bold findfont fscale scalefont setfont } def
+/bmw scsize def
+/bmh scsize def
+sc sc scale
+401 400 translate
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+/Dict-202 16 dict def
+/$workingdict 18 dict def
+Dict-202 begin
+/FontType 3 def
+/FontMatrix [1.0 32 div 0 0 1.0 32 div 0 0] def
+/FontBBox [0 0 32 32] def
+/Encoding 4 array def
+/CharProcs 16 dict dup begin
+end def
+/BuildChar
+{$workingdict begin
+/charcode exch def
+/fontdict exch def
+fontdict /CharProcs get
+fontdict /Encoding get
+charcode get get
+gsave
+0 setgray newpath
+32 0
+0 0
+32 32
+setcachedevice
+exec
+grestore
+end
+} def
+end
+/font-202 Dict-202 definefont pop
+/sf-202 { /font-202 findfont scsize scalefont setfont } def
+sf-202
+sctm setmatrix
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-101 179 -99 181 tb
+-101 259 -99 261 tb
+179 219 181 221 tb
+/bm 256 def
+-80 120 -73 127 ln
+-73 127 -67 133 ln
+-67 133 -61 141 ln
+-61 141 -56 148 ln
+-56 148 -51 157 ln
+-51 157 -47 165 ln
+-47 165 -44 174 ln
+-44 174 -41 183 ln
+-41 183 -38 192 ln
+-38 192 -37 201 ln
+-37 201 -36 210 ln
+-36 210 -35 220 ln
+-35 220 -36 229 ln
+-36 229 -37 238 ln
+-37 238 -38 247 ln
+-38 247 -41 256 ln
+-41 256 -44 265 ln
+-44 265 -47 274 ln
+-47 274 -51 282 ln
+-51 282 -56 291 ln
+-56 291 -61 298 ln
+-61 298 -67 306 ln
+-67 306 -73 312 ln
+-73 312 -80 319 ln
+-99 120 -92 127 ln
+-92 127 -86 133 ln
+-86 133 -80 141 ln
+-80 141 -76 148 ln
+-76 148 -71 157 ln
+-71 157 -67 165 ln
+-67 165 -64 174 ln
+-64 174 -61 183 ln
+-61 183 -58 192 ln
+-58 192 -57 201 ln
+-57 201 -56 210 ln
+-56 210 -55 220 ln
+-55 220 -56 229 ln
+-56 229 -57 238 ln
+-57 238 -58 247 ln
+-58 247 -61 256 ln
+-61 256 -64 265 ln
+-64 265 -67 274 ln
+-67 274 -71 282 ln
+-71 282 -76 291 ln
+-76 291 -80 298 ln
+-80 298 -86 306 ln
+-86 306 -92 312 ln
+-92 312 -99 319 ln
+-80 120 0 120 ln
+-80 320 0 320 ln
+160 220 157 228 ln
+157 228 153 235 ln
+153 235 149 243 ln
+149 243 145 250 ln
+145 250 140 257 ln
+140 257 135 263 ln
+135 263 129 270 ln
+129 270 123 276 ln
+123 276 117 282 ln
+117 282 111 287 ln
+111 287 104 292 ln
+104 292 97 297 ln
+97 297 90 301 ln
+90 301 82 305 ln
+82 305 74 308 ln
+74 308 67 311 ln
+67 311 59 314 ln
+59 314 50 316 ln
+50 316 42 318 ln
+42 318 34 319 ln
+34 319 25 320 ln
+25 320 17 320 ln
+17 320 9 320 ln
+9 320 0 320 ln
+0 120 8 120 ln
+8 120 17 120 ln
+17 120 25 120 ln
+25 120 34 120 ln
+34 120 42 121 ln
+42 121 50 123 ln
+50 123 58 125 ln
+58 125 66 127 ln
+66 127 74 130 ln
+74 130 82 134 ln
+82 134 89 138 ln
+89 138 97 142 ln
+97 142 104 147 ln
+104 147 110 152 ln
+110 152 117 157 ln
+117 157 123 163 ln
+123 163 129 169 ln
+129 169 134 175 ln
+134 175 140 182 ln
+140 182 144 189 ln
+144 189 149 196 ln
+149 196 153 204 ln
+153 204 156 211 ln
+156 211 160 219 ln
+-100 180 -62 180 ln
+-100 260 -62 260 ln
+160 220 180 220 ln
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+399 179 401 181 tb
+399 259 401 261 tb
+679 219 681 221 tb
+/bm 256 def
+420 120 427 127 ln
+427 127 433 133 ln
+433 133 439 141 ln
+439 141 444 148 ln
+444 148 449 157 ln
+449 157 453 165 ln
+453 165 456 174 ln
+456 174 459 183 ln
+459 183 462 192 ln
+462 192 463 201 ln
+463 201 464 210 ln
+464 210 465 220 ln
+465 220 464 229 ln
+464 229 463 238 ln
+463 238 462 247 ln
+462 247 459 256 ln
+459 256 456 265 ln
+456 265 453 274 ln
+453 274 449 282 ln
+449 282 444 291 ln
+444 291 439 298 ln
+439 298 433 306 ln
+433 306 427 312 ln
+427 312 420 319 ln
+401 120 408 127 ln
+408 127 414 133 ln
+414 133 420 141 ln
+420 141 424 148 ln
+424 148 429 157 ln
+429 157 433 165 ln
+433 165 436 174 ln
+436 174 439 183 ln
+439 183 442 192 ln
+442 192 443 201 ln
+443 201 444 210 ln
+444 210 445 220 ln
+445 220 444 229 ln
+444 229 443 238 ln
+443 238 442 247 ln
+442 247 439 256 ln
+439 256 436 265 ln
+436 265 433 274 ln
+433 274 429 282 ln
+429 282 424 291 ln
+424 291 420 298 ln
+420 298 414 306 ln
+414 306 408 312 ln
+408 312 401 319 ln
+420 120 500 120 ln
+420 320 500 320 ln
+660 220 657 228 ln
+657 228 653 235 ln
+653 235 649 243 ln
+649 243 645 250 ln
+645 250 640 257 ln
+640 257 635 263 ln
+635 263 629 270 ln
+629 270 623 276 ln
+623 276 617 282 ln
+617 282 611 287 ln
+611 287 604 292 ln
+604 292 597 297 ln
+597 297 590 301 ln
+590 301 582 305 ln
+582 305 574 308 ln
+574 308 567 311 ln
+567 311 559 314 ln
+559 314 550 316 ln
+550 316 542 318 ln
+542 318 534 319 ln
+534 319 525 320 ln
+525 320 517 320 ln
+517 320 509 320 ln
+509 320 500 320 ln
+500 120 508 120 ln
+508 120 517 120 ln
+517 120 525 120 ln
+525 120 534 120 ln
+534 120 542 121 ln
+542 121 550 123 ln
+550 123 558 125 ln
+558 125 566 127 ln
+566 127 574 130 ln
+574 130 582 134 ln
+582 134 589 138 ln
+589 138 597 142 ln
+597 142 604 147 ln
+604 147 610 152 ln
+610 152 617 157 ln
+617 157 623 163 ln
+623 163 629 169 ln
+629 169 634 175 ln
+634 175 640 182 ln
+640 182 644 189 ln
+644 189 649 196 ln
+649 196 653 204 ln
+653 204 656 211 ln
+656 211 660 219 ln
+400 180 438 180 ln
+400 260 438 260 ln
+660 220 680 220 ln
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+gsave
+newpath
+160 -100 20 0.000000 360.000000 arc
+stroke
+grestore
+-100 -200 -100 0 ln
+-100 0 40 0 ln
+-100 -200 40 -200 ln
+40 -200 53 -200 ln
+53 -200 65 -197 ln
+65 -197 78 -193 ln
+78 -193 90 -187 ln
+90 -187 100 -180 ln
+100 -180 110 -171 ln
+110 -171 119 -161 ln
+119 -161 126 -150 ln
+126 -150 132 -139 ln
+132 -139 136 -126 ln
+136 -126 139 -114 ln
+139 -114 140 -100 ln
+140 -100 139 -87 ln
+139 -87 136 -75 ln
+136 -75 132 -62 ln
+132 -62 126 -50 ln
+126 -50 119 -40 ln
+119 -40 110 -30 ln
+110 -30 100 -21 ln
+100 -21 89 -14 ln
+89 -14 78 -8 ln
+78 -8 65 -4 ln
+65 -4 53 -1 ln
+53 -1 39 0 ln
+-120 -140 -100 -140 ln
+-120 -60 -100 -60 ln
+180 -100 200 -100 ln
+/bm 256 def
+-121 -141 -119 -139 tb
+-121 -61 -119 -59 tb
+199 -101 201 -99 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+gsave
+newpath
+160 -300 20 0.000000 360.000000 arc
+stroke
+grestore
+-100 -400 -100 -200 ln
+-100 -200 40 -200 ln
+-100 -400 40 -400 ln
+40 -400 53 -400 ln
+53 -400 65 -397 ln
+65 -397 78 -393 ln
+78 -393 90 -387 ln
+90 -387 100 -380 ln
+100 -380 110 -371 ln
+110 -371 119 -361 ln
+119 -361 126 -350 ln
+126 -350 132 -339 ln
+132 -339 136 -326 ln
+136 -326 139 -314 ln
+139 -314 140 -300 ln
+140 -300 139 -287 ln
+139 -287 136 -275 ln
+136 -275 132 -262 ln
+132 -262 126 -250 ln
+126 -250 119 -240 ln
+119 -240 110 -230 ln
+110 -230 100 -221 ln
+100 -221 89 -214 ln
+89 -214 78 -208 ln
+78 -208 65 -204 ln
+65 -204 53 -201 ln
+53 -201 39 -200 ln
+-120 -340 -100 -340 ln
+-120 -260 -100 -260 ln
+180 -300 200 -300 ln
+/bm 256 def
+-121 -341 -119 -339 tb
+-121 -261 -119 -259 tb
+199 -301 201 -299 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+199 219 201 221 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-401 259 -399 261 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-401 179 -399 181 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+339 99 341 101 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+339 179 341 181 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-401 99 -399 101 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+1099 219 1101 221 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+219 -101 221 -99 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+219 -301 221 -299 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+339 59 341 61 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-161 59 -159 61 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-221 179 -219 181 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-281 259 -279 261 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-181 -61 -179 -59 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-181 179 -179 181 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-241 -141 -239 -139 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-241 259 -239 261 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+279 219 281 221 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+279 259 281 261 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-301 -341 -299 -339 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-301 59 -299 61 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+219 99 221 101 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-141 99 -139 101 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+219 219 221 221 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-141 -61 -139 -59 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-181 -141 -179 -139 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-181 59 -179 61 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-221 -261 -219 -259 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-261 -341 -259 -339 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-261 259 -259 261 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-401 59 -399 61 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+-381 59 -379 61 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+gsave
+newpath
+560 -200 20 0.000000 360.000000 arc
+stroke
+grestore
+300 -300 300 -100 ln
+300 -100 440 -100 ln
+300 -300 440 -300 ln
+440 -300 453 -300 ln
+453 -300 465 -297 ln
+465 -297 478 -293 ln
+478 -293 490 -287 ln
+490 -287 500 -280 ln
+500 -280 510 -271 ln
+510 -271 519 -261 ln
+519 -261 526 -250 ln
+526 -250 532 -239 ln
+532 -239 536 -226 ln
+536 -226 539 -214 ln
+539 -214 540 -200 ln
+540 -200 539 -187 ln
+539 -187 536 -175 ln
+536 -175 532 -162 ln
+532 -162 526 -150 ln
+526 -150 519 -140 ln
+519 -140 510 -130 ln
+510 -130 500 -121 ln
+500 -121 489 -114 ln
+489 -114 478 -108 ln
+478 -108 465 -104 ln
+465 -104 453 -101 ln
+453 -101 439 -100 ln
+280 -240 300 -240 ln
+280 -160 300 -160 ln
+580 -200 600 -200 ln
+/bm 256 def
+279 -241 281 -239 tb
+279 -161 281 -159 tb
+599 -201 601 -199 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+219 -241 221 -239 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+219 -161 221 -159 tb
+grestore
+gsave
+/sctm matrix currentmatrix def
+fctm setmatrix
+sf-202
+sctm setmatrix
+/bm 256 def
+1099 -201 1101 -199 tb
+grestore
+/bm 256 def
+-100 260 -240 260 ln
+-100 180 -180 180 ln
+-400 100 -399 100 ln
+340 100 340 180 ln
+340 180 400 180 ln
+680 220 1100 220 ln
+200 -100 220 -100 ln
+200 -300 220 -300 ln
+340 100 340 60 ln
+-160 60 340 60 ln
+-220 180 -400 180 ln
+-280 260 -400 260 ln
+-180 180 -180 179 ln
+-180 180 -220 180 ln
+-240 260 -240 259 ln
+-240 260 -260 260 ln
+180 220 200 220 ln
+200 220 220 220 ln
+280 220 280 260 ln
+280 260 400 260 ln
+-300 60 -300 59 ln
+-300 60 -180 60 ln
+220 220 220 219 ln
+220 100 -140 100 ln
+220 219 220 100 ln
+220 220 280 220 ln
+-140 100 -140 -60 ln
+-140 -60 -120 -60 ln
+-180 60 -180 59 ln
+-180 -60 -180 -140 ln
+-180 -140 -120 -140 ln
+-180 59 -180 -60 ln
+-180 60 -160 60 ln
+-220 180 -220 -260 ln
+-220 -260 -120 -260 ln
+-260 260 -260 259 ln
+-260 -340 -120 -340 ln
+-260 259 -260 -340 ln
+-260 260 -280 260 ln
+-400 60 -380 60 ln
+-399 60 -380 60 ln
+-380 60 -300 60 ln
+220 -300 220 -240 ln
+220 -240 280 -240 ln
+220 -100 220 -160 ln
+220 -160 280 -160 ln
+600 -200 1100 -200 ln
+gsave
+lfont
+-401 259 -399 261 (a) ft
+-401 179 -399 181 (b) ft
+1099 219 1101 221 (sum) ft
+-401 59 -399 61 (cin) ft
+1099 -201 1101 -199 (cout) ft
+grestore
+grestore
