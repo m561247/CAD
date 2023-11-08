@@ -4,7 +4,8 @@ source : HW2.pdf, bcd.pla, bcd.espresso.pla
 
 # 第二題
 source : alu4.pla, alu4.espresso.pla, alu4_pla.png, alu4_pla_exact.png
-
+time ./espresso alu4.pla > alu4.espresso.pla
+time ./espresso -Dexact alu4.pla > alu4.espresso.pla
 
 
 
