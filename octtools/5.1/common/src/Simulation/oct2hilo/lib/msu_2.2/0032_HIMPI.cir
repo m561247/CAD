@@ -1,8 +1,0 @@
-CCT     (rise,fall,mrise,mfall,oc1,ic1) himpinv(O,A1)
-
-capacitor(ic1) cap1(A1);
-capacitor(oc1) cap2(O);
-
-INPUT   A1;
-WIRE    (rise,fall,mrise,mfall,0) O = NOT A1.
-

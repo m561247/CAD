@@ -1,9 +1,0 @@
-cct (r,f,mr,mf,oc,ic1,ic2) transgate (out,data,ctrl)
-capacitor(ic1) c1(data);
-capacitor(ic2) c2(ctrl);
-capacitor(oc) c3(out);
-tranif1 (r,f,mr,mf,0) g1(out,data,ctrl);
-wire out;
-input data,ctrl;
-.
-

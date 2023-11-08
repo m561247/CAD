@@ -1,9 +1,0 @@
-The programs 'musa' and 'rpc-musa' are compiled off the same source
-code.  This code can be compiled to either an X10 version of
-'musa' and 'rpc-musa', or an X11 version of 'musa' and 'rpc-musa',
-depending if the following constants are defined.  If the variable
-'X11' is defined then the code will be compile such that X11 is
-supported, else X10 will be supported.  If the variable 'RPC_MUSA'
-is defined then the code will be compiled for 'rpc-musa'.  Appropriate
-changes to the 'Makefile' will have to be made so that the correct
-librarys are linked.

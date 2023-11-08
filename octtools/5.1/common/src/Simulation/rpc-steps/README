@@ -1,9 +1,0 @@
-      			Start up vem and then use the mouse to bring up
-the menu of options.  Under applications you should see the rpc-spice option.
-Click it and you should get, among other things, an 'Operational' message
-to appear in your VEM window.  Once it does, WHILE HOLDING DOWN THE SHIFT KEY, 
-try to get the options menu back.  What will appear is the rpc-spice options
-menu.  In order to get the regular menu don't hold down the shift key.
-The functions have built in error messages to inform you if you're using
-them the wrong way.  After invoking rpc-spice, look at the HELP manual or type
-:user-help in VEM and everything is explanable from there.
